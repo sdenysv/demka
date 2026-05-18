@@ -300,6 +300,45 @@
   .lang-opt:hover:not(.active){background:var(--bg)}
   .lang-opt.active{background:var(--ink);color:var(--raised)}
 
+  /* ── Export picker ──────────────────────────────────────────── */
+  .export-picker{position:relative}
+  .export-popup{position:absolute;top:calc(100% + 8px);right:0;
+    background:var(--surface);border:1px solid var(--ink2);border-radius:6px;
+    padding:6px;display:flex;flex-direction:column;gap:2px;min-width:130px;
+    z-index:200;opacity:0;pointer-events:none;transform:translateY(-4px);
+    transition:opacity 140ms var(--ease),transform 140ms var(--ease);box-shadow:0 4px 16px rgba(0,0,0,.12)}
+  .export-popup.show{opacity:1;pointer-events:auto;transform:none}
+  .export-opt{appearance:none;border:0;background:transparent;width:100%;
+    font:600 13px/1 var(--font);color:var(--ink);padding:8px 12px;border-radius:4px;
+    cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;
+    transition:background 100ms var(--ease)}
+  .export-opt:hover{background:var(--bg)}
+  .export-opt .exp-badge{font-family:var(--mono);font-size:10px;color:var(--mute);
+    border:1px solid var(--line);padding:1px 4px;border-radius:2px}
+
+  /* ── Print / PDF export ──────────────────────────────────────── */
+  @media print{
+    *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+    @page{size:landscape;margin:0}
+    body>*:not(#print-root){display:none!important}
+    #print-root{display:block!important}
+    .print-page{width:100vw;height:100vh;display:flex;flex-direction:column;justify-content:center;
+      padding:64px 80px;page-break-after:always;box-sizing:border-box;
+      background:var(--bg);color:var(--ink);font-family:var(--font)}
+    .print-page:last-child{page-break-after:avoid}
+    .print-page h1{font-weight:800;font-size:44pt;line-height:1.1;margin:0 0 16px;letter-spacing:-.02em}
+    .print-page h2{font-weight:700;font-size:32pt;line-height:1.15;margin:0 0 14px;letter-spacing:-.015em}
+    .print-page h3{font-weight:600;font-size:24pt;line-height:1.2;margin:0 0 12px}
+    .print-page .lede{font-size:18pt;color:var(--ink2);margin:0 0 16px;line-height:1.4}
+    .print-page ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+    .print-page li{font-size:16pt;line-height:1.4;padding:2px 0 2px 24px;position:relative}
+    .print-page li::before{content:"";position:absolute;left:4px;top:14px;width:10px;height:2px;background:currentColor;opacity:.5}
+    .print-page li ul{margin:6px 0 0 16px;gap:4px}
+    .print-page li li{font-size:13pt}
+    .print-page .node-footer{margin-top:auto;padding-top:12px;border-top:1px solid var(--line);
+      font-size:9pt;color:var(--mute);font-family:var(--mono)}
+  }
+
   @media (max-width: 780px){
     .editor-pane{width:46%;min-width:240px}
   }
@@ -326,12 +365,20 @@
     <div class="palette-popup" id="palette-popup"></div>
   </div>
   <button class="btn" id="remote-btn" title="Phone remote">Clicker</button>
+  <button class="btn" id="help-btn" title="Keyboard shortcuts">?</button>
+  <button class="btn primary" id="present-btn">&#9654; Present <kbd>F</kbd></button>
+  <div class="export-picker" id="export-picker">
+    <button class="btn" id="export-btn">Export &#9662;</button>
+    <div class="export-popup" id="export-popup">
+      <button class="export-opt" id="exp-pdf">PDF <span class="exp-badge">print</span></button>
+      <button class="export-opt" id="exp-pptx">PPTX <span class="exp-badge">slides</span></button>
+      <button class="export-opt" id="exp-md">Markdown <span class="exp-badge">text</span></button>
+    </div>
+  </div>
   <div class="lang-switcher" id="lang-switcher">
     <button class="lang-opt" data-lang="en">English</button>
     <button class="lang-opt" data-lang="uk">Українська</button>
   </div>
-  <button class="btn" id="help-btn" title="Keyboard shortcuts">?</button>
-  <button class="btn primary" id="present-btn">&#9654; Present <kbd>F</kbd></button>
 </header>
 
 <main class="stage">
@@ -523,6 +570,10 @@ const STRINGS = {
     phoneConnected: 'Connected',
     phoneDisconnected: 'Disconnected',
     phoneRetry: '↺ Retry',
+    exportBtn: 'Export',
+    exportPdf: 'PDF',
+    exportPptx: 'PPTX',
+    exportMd: 'Markdown',
     helpTitle: 'demka — keyboard shortcuts',
     helpGotIt: 'Got it',
     helpRows: [
@@ -540,7 +591,7 @@ const STRINGS = {
     logoSubtitle: '· markdown → слайди',
     cardsLabel: 'Картки',
     remoteBtn: 'Клікер',
-    presentBtn: '&#9654; Презентація <kbd>F</kbd>',
+    presentBtn: '&#9654; Презентувати <kbd>F</kbd>',
     presentExit: 'Вийти',
     editorHead: 'редактор · markdown',
     saveSaved: 'збережено',
@@ -562,6 +613,10 @@ const STRINGS = {
     phoneConnected: 'Підключено',
     phoneDisconnected: 'Відключено',
     phoneRetry: '↺ Повторити',
+    exportBtn: 'Експортувати',
+    exportPdf: 'PDF',
+    exportPptx: 'PPTX',
+    exportMd: 'Markdown',
     helpTitle: 'демка — комбінації клавіш',
     helpGotIt: 'Зрозуміло',
     helpRows: [
@@ -601,6 +656,7 @@ function applyLang(){
   document.getElementById('phone-status-text').textContent = s[phoneStatusKey];
   const retryEl = document.getElementById('phone-retry');
   if (retryEl) retryEl.textContent = s.phoneRetry;
+  document.getElementById('export-btn').textContent = s.exportBtn + ' ▾';
   document.querySelector('.help-card h3').textContent = s.helpTitle;
   document.getElementById('help-close').textContent = s.helpGotIt;
   document.querySelector('.help-card dl').innerHTML = s.helpRows.map(([k,d]) => `<dt>${k}</dt><dd>${d}</dd>`).join('');
@@ -1263,6 +1319,101 @@ window.addEventListener('beforeunload', () => { if (remotePeer) remotePeer.destr
     });
     peer.on('error', err => { $('#phone-status-text').textContent = 'Error: ' + err.type; });
   });
+})();
+
+// ── Export ────────────────────────────────────────────────────
+function exportStamp(){
+  const d = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
+}
+
+function exportMarkdown(){
+  const blob = new Blob([editor.value], { type:'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `demka-${exportStamp()}.md`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function exportPdf(){
+  if (!state.nodes.length) return;
+  const root = document.createElement('div');
+  root.id = 'print-root';
+  root.style.display = 'none';
+  for (const n of state.nodes){
+    const page = document.createElement('div');
+    page.className = 'print-page';
+    page.innerHTML = nodeBody(n);
+    root.appendChild(page);
+  }
+  document.body.appendChild(root);
+  window.print();
+  document.body.removeChild(root);
+}
+
+function loadScript(src, cb){
+  if (document.querySelector(`script[src="${src}"]`)){ cb(); return; }
+  const s = document.createElement('script');
+  s.src = src;
+  s.onload = cb;
+  s.onerror = () => alert('Failed to load export library.');
+  document.head.appendChild(s);
+}
+
+function exportPptx(){
+  if (!state.nodes.length) return;
+  loadScript('https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js', () => {
+    const pptx = new PptxGenJS();
+    pptx.layout = 'LAYOUT_WIDE';
+    const cs = getComputedStyle(document.documentElement);
+    const hex = v => cs.getPropertyValue(v).trim().replace('#','');
+    const inkC = hex('--ink'), ink2C = hex('--ink2'), muteC = hex('--mute'), bgC = hex('--bg');
+
+    for (const n of state.nodes){
+      const slide = pptx.addSlide();
+      slide.background = { color: bgC };
+
+      const fontSize = n.type==='h1' ? 40 : n.type==='h2' ? 32 : 24;
+      const hasContent = n.lede || n.bullets.length;
+      slide.addText(n.text, {
+        x:0.6, y: hasContent ? 0.5 : 2.4, w:'88%', h:1.4,
+        fontSize, bold:true, color:inkC, fontFace:'Calibri', charSpacing:-0.3
+      });
+
+      let y = (hasContent ? 0.5 : 2.4) + 1.3;
+      if (n.lede){
+        slide.addText(n.lede, { x:0.6, y, w:'88%', h:0.7, fontSize:18, color:ink2C, fontFace:'Calibri' });
+        y += 0.85;
+      }
+      if (n.bullets.length){
+        function flatBullets(bs, depth){
+          return bs.flatMap(b => [
+            { text: b.text, options:{ bullet:{ indent: depth * 15 }, indentLevel:depth, paraSpaceAfter:4, fontSize:16, color:inkC, fontFace:'Calibri' } },
+            ...flatBullets(b.children||[], depth+1)
+          ]);
+        }
+        slide.addText(flatBullets(n.bullets, 0), { x:0.6, y, w:'88%', h:5.12-y, valign:'top' });
+      }
+      if (state.footer){
+        slide.addText(state.footer, { x:0.6, y:6.9, w:'88%', h:0.3, fontSize:9, color:muteC, fontFace:'Calibri' });
+      }
+    }
+    pptx.writeFile({ fileName:`demka-${exportStamp()}.pptx` });
+  });
+}
+
+(function initExport(){
+  const popup = $('#export-popup');
+  $('#export-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    popup.classList.toggle('show');
+  });
+  $('#exp-pdf').addEventListener('click',  () => { popup.classList.remove('show'); exportPdf(); });
+  $('#exp-pptx').addEventListener('click', () => { popup.classList.remove('show'); exportPptx(); });
+  $('#exp-md').addEventListener('click',   () => { popup.classList.remove('show'); exportMarkdown(); });
+  document.addEventListener('click', () => popup.classList.remove('show'));
 })();
 
 // ── Palette picker ───────────────────────────────────────────
