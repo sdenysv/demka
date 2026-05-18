@@ -141,6 +141,30 @@
     flex-shrink:0}
   .node.visited .node-footer{border-top-color:var(--visited)}
 
+  /* ── Node image layouts ──────────────────────────────────── */
+  /* split: text left, images right */
+  .node.node-split{flex-direction:row;padding:0;overflow:hidden}
+  .node.node-split.active{padding:0}
+  .node-text{flex:1;min-width:0;padding:var(--node-pad-v,22px) var(--node-pad-h,26px);
+    display:flex;flex-direction:column;overflow:hidden}
+  .node.node-split .node-footer{margin-top:auto;padding-top:10px;border-top:1px solid var(--line)}
+  .node.node-split .node-imgs{flex:0 0 45%;min-width:0;display:grid;gap:3px;overflow:hidden;border-radius:0 7px 7px 0}
+  /* image-only: full card grid with bottom caption */
+  .node.node-img-only{flex-direction:column;padding:0;overflow:hidden}
+  .node.node-img-only.active{padding:0}
+  .node.node-img-only .node-imgs{flex:1;min-height:0;display:grid;gap:3px;overflow:hidden;border-radius:7px 7px 0 0}
+  .img-caption{flex:0 0 auto;padding:6px var(--node-pad-h,26px);margin:0;display:flex;align-items:center}
+  .img-caption h1,.img-caption h2,.img-caption h3{margin:0;font-size:var(--nfs-h3,20px);font-weight:600}
+  .node.node-img-only .node-footer{padding:0 var(--node-pad-h,26px) 6px;border-top:none;margin-top:0}
+  /* grid columns */
+  .node-imgs.node-imgs-1{grid-template-columns:1fr}
+  .node-imgs.node-imgs-2{grid-template-columns:1fr 1fr}
+  .node-imgs.node-imgs-3{grid-template-columns:repeat(3,1fr)}
+  /* images fill their cell */
+  .node-imgs img{width:100%;height:100%;object-fit:cover;display:block}
+  /* multi-image grids: equal rows */
+  .node-imgs.node-imgs-2,.node-imgs.node-imgs-3{grid-auto-rows:1fr}
+
   /* next-slide direction arrow — inside active card near the exit edge */
   .node.active::after{content:"";position:absolute;pointer-events:none;
     width:7px;height:7px;
@@ -350,6 +374,17 @@
     .print-page li li{font-size:13pt}
     .print-page .node-footer{margin-top:auto;padding-top:12px;border-top:1px solid var(--line);
       font-size:9pt;color:var(--mute);font-family:var(--mono)}
+    /* image layouts in print */
+    .print-page.node-split{flex-direction:row;padding:0}
+    .print-page.node-split .node-text{flex:1;padding:64px 80px}
+    .print-page.node-split .node-imgs{flex:0 0 45%;display:grid;gap:3px}
+    .print-page.node-img-only{padding:0}
+    .print-page.node-img-only .node-imgs{flex:1;display:grid;gap:3px}
+    .print-page .img-caption{padding:12px 80px}
+    .print-page .node-imgs img{width:100%;height:100%;object-fit:cover}
+    .print-page .node-imgs.node-imgs-1{grid-template-columns:1fr}
+    .print-page .node-imgs.node-imgs-2{grid-template-columns:1fr 1fr;grid-auto-rows:1fr}
+    .print-page .node-imgs.node-imgs-3{grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr}
   }
 
   @media (max-width: 780px){
@@ -770,7 +805,7 @@ function parseMarkdown(src){
   let stack = [root];
 
   function makeNode(level, text){
-    return { type:'h'+level, level, text, lede:'', bullets:[], code:null, children:[], id: uid() };
+    return { type:'h'+level, level, text, lede:'', bullets:[], code:null, images:[], children:[], id: uid() };
   }
   function topOfDepth(d){
     while (stack.length > 1 && stack[stack.length-1].level >= d) stack.pop();
@@ -821,6 +856,11 @@ function parseMarkdown(src){
           currentBulletPath = [bullet];
         }
       }
+      continue;
+    }
+    if ((m = raw.match(/^!\[([^\]]*)\]\(([^)]+)\)\s*$/))){
+      const cur = stack[stack.length-1];
+      if (cur && cur !== root) cur.images.push({ alt: m[1], src: m[2] });
       continue;
     }
     if (/^\s*$/.test(raw)){ currentBulletPath = []; continue; }
@@ -991,7 +1031,10 @@ function renderNodes(){
   // nodes
   for (const n of state.nodes){
     const el = document.createElement('article');
-    el.className = `node t-${n.type}`;
+    const imgs = n.images || [];
+    const hasText = !!(n.lede || n.bullets.length || n.code);
+    const layoutCls = imgs.length ? (hasText ? ' node-split' : ' node-img-only') : '';
+    el.className = `node t-${n.type}${layoutCls}`;
     el.dataset.id = n.id;
     el.style.left   = n.x + 'px';
     el.style.top    = n.y + 'px';
@@ -1008,12 +1051,40 @@ function renderNodes(){
 
 function nodeBody(n){
   const tag = n.type === 'h1' ? 'h1' : n.type === 'h2' ? 'h2' : 'h3';
-  let html = `<${tag}>${inlineMd(n.text)}</${tag}>`;
-  if (n.lede) html += `<p class="lede">${inlineMd(n.lede)}</p>`;
-  if (n.bullets.length) html += '<ul>' + n.bullets.map(renderBullet).join('') + '</ul>';
-  if (n.code) html += `<pre>${n.code.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre>`;
-  if (state.footer) html += `<p class="node-footer">${esc(state.footer)}</p>`;
-  return html;
+  const imgs = n.images || [];
+  const hasText = !!(n.lede || n.bullets.length || n.code);
+
+  if (imgs.length && !hasText){
+    // image-only layout: full-card grid with heading as caption
+    const cols = imgs.length === 1 ? 1 : imgs.length === 2 ? 2 : 3;
+    const imgHtml = imgs.map(img => {
+      const s = safeImgSrc(img.src);
+      if (!s) return '';
+      return `<img src="${s}" alt="${esc(img.alt)}" loading="lazy" />`;
+    }).join('');
+    let html = `<div class="node-imgs node-imgs-${cols}">${imgHtml}</div>`;
+    html += `<p class="img-caption"><${tag}>${inlineMd(n.text)}</${tag}></p>`;
+    if (state.footer) html += `<p class="node-footer">${esc(state.footer)}</p>`;
+    return html;
+  }
+
+  const tag_ = tag;
+  let textHtml = `<${tag_}>${inlineMd(n.text)}</${tag_}>`;
+  if (n.lede) textHtml += `<p class="lede">${inlineMd(n.lede)}</p>`;
+  if (n.bullets.length) textHtml += '<ul>' + n.bullets.map(renderBullet).join('') + '</ul>';
+  if (n.code) textHtml += `<pre>${n.code.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre>`;
+  if (state.footer) textHtml += `<p class="node-footer">${esc(state.footer)}</p>`;
+
+  if (!imgs.length) return textHtml;
+
+  // split layout: text left, images right
+  const cols = imgs.length === 1 ? 1 : 2;
+  const imgHtml = imgs.map(img => {
+    const s = safeImgSrc(img.src);
+    if (!s) return '';
+    return `<img src="${s}" alt="${esc(img.alt)}" loading="lazy" />`;
+  }).join('');
+  return `<div class="node-text">${textHtml}</div><div class="node-imgs node-imgs-${cols}">${imgHtml}</div>`;
 }
 function renderBullet(b){
   let html = `<li>${inlineMd(b.text)}`;
@@ -1071,6 +1142,13 @@ function updateActive(){
   } else { counter.style.display = 'none'; }
 }
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function safeImgSrc(src){
+  if (src.startsWith('img:')) return imgStore.get(src.slice(4)) || '';
+  if (/^data:image\//.test(src)) return src;
+  if (/^https?:\/\//i.test(src)) return src;
+  if (/^\/|^\.\/|^\.\.\//.test(src)) return src;
+  return '';
+}
 
 // ── Camera ───────────────────────────────────────────────────
 function focusOnActive(opts={}){
@@ -1241,7 +1319,45 @@ function updateNavButtons(){
 
 // ── Persistence ──────────────────────────────────────────────
 const STORAGE_KEY = 'demka.md';
-function save(){ try{ localStorage.setItem(STORAGE_KEY, editor.value); }catch(e){} }
+const IMG_KEY_PREFIX = 'demka.img.';
+
+// In-memory image store: shortId → dataUrl
+const imgStore = new Map();
+(function loadStoredImages(){
+  try{
+    for (let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if (k && k.startsWith(IMG_KEY_PREFIX)){
+        imgStore.set(k.slice(IMG_KEY_PREFIX.length), localStorage.getItem(k));
+      }
+    }
+  }catch(e){}
+})();
+
+function storeImage(dataUrl){
+  const id = Math.random().toString(36).slice(2, 9);
+  imgStore.set(id, dataUrl);
+  try{ localStorage.setItem(IMG_KEY_PREFIX + id, dataUrl); }catch(e){}
+  return id;
+}
+
+function pruneUnusedImages(){
+  const src = editor.value;
+  try{
+    for (let i = localStorage.length - 1; i >= 0; i--){
+      const k = localStorage.key(i);
+      if (k && k.startsWith(IMG_KEY_PREFIX)){
+        const id = k.slice(IMG_KEY_PREFIX.length);
+        if (!src.includes('img:' + id)){
+          localStorage.removeItem(k);
+          imgStore.delete(id);
+        }
+      }
+    }
+  }catch(e){}
+}
+
+function save(){ try{ localStorage.setItem(STORAGE_KEY, editor.value); pruneUnusedImages(); }catch(e){} }
 function load(){
   try{
     const s = localStorage.getItem(STORAGE_KEY);
@@ -1324,6 +1440,30 @@ document.addEventListener('mousemove', e => {
 document.addEventListener('mouseup', ()=>{ dragging=false; document.body.style.cursor=''; });
 
 // ── Editor ───────────────────────────────────────────────────
+editor.addEventListener('paste', e => {
+  const items = Array.from(e.clipboardData?.items || []);
+  const imgItem = items.find(it => it.type.startsWith('image/'));
+  if (!imgItem) return;
+  e.preventDefault();
+  const file = imgItem.getAsFile();
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    const id = storeImage(dataUrl);
+    const md = `![](img:${id})`;
+    const start = editor.selectionStart;
+    const end   = editor.selectionEnd;
+    const before = editor.value.slice(0, start);
+    const after  = editor.value.slice(end);
+    const needNl = before.length > 0 && !before.endsWith('\n');
+    editor.value = before + (needNl ? '\n' : '') + md + '\n' + after;
+    const cur = before.length + (needNl ? 1 : 0) + md.length + 1;
+    editor.selectionStart = editor.selectionEnd = cur;
+    scheduleRebuild();
+  };
+  reader.readAsDataURL(file);
+});
 editor.addEventListener('input', scheduleRebuild);
 let resizeTimer;
 window.addEventListener('resize', ()=>{
@@ -1482,7 +1622,10 @@ function exportPdf(){
   root.style.display = 'none';
   for (const n of state.nodes){
     const page = document.createElement('div');
-    page.className = 'print-page';
+    const imgs = n.images || [];
+    const hasText = !!(n.lede || n.bullets.length || n.code);
+    const printLayout = imgs.length ? (hasText ? ' node-split' : ' node-img-only') : '';
+    page.className = 'print-page' + printLayout;
     page.innerHTML = nodeBody(n);
     root.appendChild(page);
   }
