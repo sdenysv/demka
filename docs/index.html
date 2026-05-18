@@ -263,6 +263,12 @@
   .phone-dot{width:6px;height:6px;border-radius:50%;background:var(--mute);
     transition:background 200ms var(--ease)}
   .phone-dot.on{background:#5a9e6f}
+  .phone-retry{display:none;appearance:none;border:1px solid var(--line);background:transparent;
+    color:var(--mute);font:600 11px/1 var(--font);letter-spacing:.06em;text-transform:uppercase;
+    padding:6px 12px;border-radius:3px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+    transition:border-color 120ms var(--ease),color 120ms var(--ease)}
+  .phone-retry.show{display:inline-block}
+  .phone-retry:active{border-color:var(--ink2);color:var(--ink)}
   .phone-btns{display:flex;flex:1}
   .phone-btn{flex:1;border:none;background:transparent;color:var(--ink2);
     font-size:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;
@@ -395,6 +401,7 @@
   <div class="phone-status">
     <span class="phone-dot" id="phone-dot"></span>
     <span id="phone-status-text">Connecting…</span>
+    <button class="phone-retry" id="phone-retry">↺ Retry</button>
   </div>
   <div class="phone-btns">
     <button class="phone-btn" id="phone-prev">&#8592;</button>
@@ -515,6 +522,7 @@ const STRINGS = {
     phoneConnecting: 'Connecting…',
     phoneConnected: 'Connected',
     phoneDisconnected: 'Disconnected',
+    phoneRetry: '↺ Retry',
     helpTitle: 'demka — keyboard shortcuts',
     helpGotIt: 'Got it',
     helpRows: [
@@ -553,6 +561,7 @@ const STRINGS = {
     phoneConnecting: 'Підключення…',
     phoneConnected: 'Підключено',
     phoneDisconnected: 'Відключено',
+    phoneRetry: '↺ Повторити',
     helpTitle: 'демка — комбінації клавіш',
     helpGotIt: 'Зрозуміло',
     helpRows: [
@@ -590,6 +599,8 @@ function applyLang(){
   const loadingEl = document.getElementById('remote-loading-text');
   if (loadingEl) loadingEl.textContent = s.remoteLoading;
   document.getElementById('phone-status-text').textContent = s[phoneStatusKey];
+  const retryEl = document.getElementById('phone-retry');
+  if (retryEl) retryEl.textContent = s.phoneRetry;
   document.querySelector('.help-card h3').textContent = s.helpTitle;
   document.getElementById('help-close').textContent = s.helpGotIt;
   document.querySelector('.help-card dl').innerHTML = s.helpRows.map(([k,d]) => `<dt>${k}</dt><dd>${d}</dd>`).join('');
@@ -1198,28 +1209,57 @@ window.addEventListener('beforeunload', () => { if (remotePeer) remotePeer.destr
   loadPeerJS(() => {
     const peer = new Peer();
     peer.on('open', () => {
-      const conn = peer.connect(hostId);
-      let marked = false;
-      function markConnected(){
-        if (marked) return;
-        marked = true;
-        $('#phone-dot').classList.add('on');
-        phoneStatusKey = 'phoneConnected';
-        $('#phone-status-text').textContent = STRINGS[lang].phoneConnected;
-      }
-      conn.on('open', markConnected);
-      conn.on('data', d => { if (d === 'connected') markConnected(); });
-      // fallback poll — open event unreliable on some mobile browsers
-      const poll = setInterval(() => { if (conn.open){ markConnected(); clearInterval(poll); } }, 200);
-      setTimeout(() => clearInterval(poll), 30000);
-      conn.on('close', () => {
-        marked = false;
+      let currentConn = null;
+      let poll = null;
+      let retryTimer = null;
+
+      function attemptConnect(){
+        if (currentConn){ try{ currentConn.close(); }catch(e){} }
+        clearInterval(poll);
+        clearTimeout(retryTimer);
+        $('#phone-retry').classList.remove('show');
         $('#phone-dot').classList.remove('on');
-        phoneStatusKey = 'phoneDisconnected';
-        $('#phone-status-text').textContent = STRINGS[lang].phoneDisconnected;
-      });
-      $('#phone-next').addEventListener('click', () => { if (conn.open) conn.send('next'); });
-      $('#phone-prev').addEventListener('click', () => { if (conn.open) conn.send('prev'); });
+        phoneStatusKey = 'phoneConnecting';
+        $('#phone-status-text').textContent = STRINGS[lang].phoneConnecting;
+
+        const conn = peer.connect(hostId);
+        currentConn = conn;
+        let marked = false;
+
+        function markConnected(){
+          if (marked) return;
+          marked = true;
+          clearTimeout(retryTimer);
+          clearInterval(poll);
+          $('#phone-retry').classList.remove('show');
+          $('#phone-dot').classList.add('on');
+          phoneStatusKey = 'phoneConnected';
+          $('#phone-status-text').textContent = STRINGS[lang].phoneConnected;
+        }
+
+        conn.on('open', markConnected);
+        conn.on('data', d => { if (d === 'connected') markConnected(); });
+        poll = setInterval(() => { if (conn.open){ markConnected(); clearInterval(poll); } }, 200);
+        setTimeout(() => clearInterval(poll), 30000);
+
+        retryTimer = setTimeout(() => {
+          if (!marked) $('#phone-retry').classList.add('show');
+        }, 5000);
+
+        conn.on('close', () => {
+          marked = false;
+          clearTimeout(retryTimer);
+          clearInterval(poll);
+          $('#phone-dot').classList.remove('on');
+          phoneStatusKey = 'phoneDisconnected';
+          $('#phone-status-text').textContent = STRINGS[lang].phoneDisconnected;
+        });
+      }
+
+      attemptConnect();
+      $('#phone-retry').addEventListener('click', attemptConnect);
+      $('#phone-next').addEventListener('click', () => { if (currentConn?.open) currentConn.send('next'); });
+      $('#phone-prev').addEventListener('click', () => { if (currentConn?.open) currentConn.send('prev'); });
     });
     peer.on('error', err => { $('#phone-status-text').textContent = 'Error: ' + err.type; });
   });
