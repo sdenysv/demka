@@ -164,16 +164,6 @@
   /* multi-image grids: equal rows */
   .node-imgs.node-imgs-2,.node-imgs.node-imgs-3{grid-auto-rows:1fr}
 
-  /* next-slide direction arrow — inside active card near the exit edge */
-  .node.active::after{content:"";position:absolute;pointer-events:none;
-    width:7px;height:7px;
-    border-right:1.5px solid var(--ink2);border-top:1.5px solid var(--ink2);
-    opacity:0;transition:opacity 200ms var(--ease)}
-  .node.active[data-next-dir="right"]::after{
-    right:14px;top:50%;transform:translateY(-50%) rotate(45deg);opacity:1}
-  .node.active[data-next-dir="down"]::after{
-    bottom:14px;left:50%;transform:translateX(-50%) rotate(135deg);opacity:1}
-
 
   /* ── Canvas HUD ──────────────────────────────────────────── */
   .canvas-hud{position:absolute;left:16px;top:16px;display:flex;flex-direction:column;gap:6px;
@@ -1097,7 +1087,6 @@ function updateActive(){
   const active = state.nodes[state.activeIdx];
   $$('#world > .node').forEach(el => {
     el.classList.remove('active');
-    delete el.dataset.nextDir;
     const id = el.dataset.id;
     if (state.visited.has(id) && id !== active?.id) el.classList.add('visited');
     else el.classList.remove('visited');
@@ -1112,13 +1101,6 @@ function updateActive(){
       const bulletOffset = active.lede ? 1 : 0;
       const liAll = el.querySelectorAll('li');
       liAll.forEach((li, i) => li.classList.toggle('shown', i < state.bulletsShown - bulletOffset));
-      // next-slide direction arrow
-      const allRevealed = state.bulletsShown >= totalRevealSteps(active);
-      const hasNext = state.activeIdx < state.nodes.length - 1;
-      if (allRevealed && hasNext){
-        const nextNode = state.nodes[state.activeIdx + 1];
-        el.dataset.nextDir = nextNode.y > active.y + CARD_H * 0.5 ? 'down' : 'right';
-      }
     }
   }
   // connector styling
