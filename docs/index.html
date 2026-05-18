@@ -183,9 +183,10 @@
     background:var(--surface);border:1px solid var(--ink2);padding:9px 14px;border-radius:3px;
     z-index:5;letter-spacing:.02em;font-variant-numeric:tabular-nums;display:none;
     flex-direction:column;gap:0}
-  .timer .t-label{font-size:10px;font-family:var(--mono);color:var(--mute);text-transform:uppercase;letter-spacing:.08em;line-height:1.2;margin-bottom:1px}
-  .timer .t-val{font-size:14px;color:var(--ink)}
-  .timer .t-slide{margin-top:6px}
+  .timer .t-row{display:flex;align-items:baseline;gap:7px}
+  .timer .t-row+.t-row{margin-top:2px}
+  .timer .t-label{font-size:10px;font-family:var(--mono);color:var(--mute);text-transform:uppercase;letter-spacing:.08em;line-height:1}
+  .timer .t-val{font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums}
   body.present .timer{background:transparent;border-color:transparent;color:var(--mute)}
   body.present .timer .t-val{color:var(--mute)}
 
@@ -548,10 +549,14 @@
     </div>
 
     <div class="timer" id="timer">
-      <div class="t-label">total</div>
-      <div class="t-val" id="timer-total">00:00:00</div>
-      <div class="t-label t-slide">slide</div>
-      <div class="t-val" id="timer-slide">00:00:00</div>
+      <div class="t-row">
+        <span class="t-label" id="timer-label-total">demka</span>
+        <span class="t-val" id="timer-total">00:00:00</span>
+      </div>
+      <div class="t-row">
+        <span class="t-label" id="timer-label-slide">slide</span>
+        <span class="t-val" id="timer-slide">00:00:00</span>
+      </div>
     </div>
 
     <div class="empty" id="empty" style="display:none">
@@ -713,6 +718,8 @@ const STRINGS = {
     ],
     recordModalOk: 'I understand',
     recordMicLabel: 'Enable microphone audio recording',
+    timerLabelTotal: 'demka',
+    timerLabelSlide: 'slide',
     remoteBtn: 'Clicker',
     presentBtn: '&#9654; Present <kbd>F</kbd>',
     presentExit: 'Exit',
@@ -769,6 +776,8 @@ const STRINGS = {
     ],
     recordModalOk: 'Зрозуміло',
     recordMicLabel: 'Ввімкнути запис аудіо з мікрофона',
+    timerLabelTotal: 'демка',
+    timerLabelSlide: 'слайд',
     remoteBtn: 'Клікер',
     presentBtn: '&#9654; Презентувати <kbd>F</kbd>',
     presentExit: 'Вийти',
@@ -823,6 +832,10 @@ function applyLang(){
   document.getElementById('rec-modal-body').innerHTML = s.recordModalBody.map(t => `<li>${t}</li>`).join('');
   document.getElementById('rec-modal-ok').textContent = s.recordModalOk;
   document.getElementById('rec-mic-label').textContent = s.recordMicLabel;
+  document.getElementById('timer-label-total').textContent = s.timerLabelTotal;
+  document.getElementById('timer-label-slide').textContent = s.timerLabelSlide;
+  document.getElementById('timer-label-total').textContent = s.timerLabelTotal;
+  document.getElementById('timer-label-slide').textContent = s.timerLabelSlide;
   document.getElementById('record-btn').innerHTML = _mediaRec ? s.recordStop : s.recordBtn;
   document.getElementById('remote-btn').textContent = s.remoteBtn;
   if (state.present){ presentBtn.textContent = s.presentExit; } else { presentBtn.innerHTML = s.presentBtn; }
