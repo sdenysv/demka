@@ -2,7 +2,7 @@
 
 Markdown → slides. 
 
-1. Open [skvortsovden.github.io/demka/](https://skvortsovden.github.io/demka/)
+1. Open [demka.in.ua](https://demka.in.ua)
 2. Write markdown
 3. Press **F** to present.
 4. Enjoy your demka.
