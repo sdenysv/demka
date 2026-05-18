@@ -1226,9 +1226,10 @@ window.addEventListener('beforeunload', () => { if (remotePeer) remotePeer.destr
         $('#phone-status-text').textContent = STRINGS[lang].phoneConnected;
       }
       conn.on('open', markConnected);
-      // fallback poll — 'open' sometimes fires before handler is attached
+      conn.on('data', d => { if (d === 'connected') markConnected(); });
+      // fallback poll — open event unreliable on some mobile browsers
       const poll = setInterval(() => { if (conn.open){ markConnected(); clearInterval(poll); } }, 200);
-      setTimeout(() => clearInterval(poll), 15000);
+      setTimeout(() => clearInterval(poll), 30000);
       conn.on('close', () => {
         marked = false;
         $('#phone-dot').classList.remove('on');
