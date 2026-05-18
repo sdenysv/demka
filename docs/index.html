@@ -228,7 +228,7 @@
   /* ── Palette picker ─────────────────────────────────────────── */
   .pal-btn-dots{display:flex;gap:3px;align-items:center;height:1em}
   .pal-btn-dot{width:8px;height:8px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.12)}
-  .palette-picker{position:relative}
+  .palette-picker{position:relative;display:flex;align-items:center}
   .palette-popup{position:absolute;top:calc(100% + 8px);right:0;
     background:var(--surface);border:1px solid var(--ink2);border-radius:6px;
     padding:6px;display:flex;flex-direction:column;gap:2px;min-width:172px;
@@ -304,6 +304,7 @@
   .toggle-label{font:600 13px/1 var(--font);color:var(--ink);letter-spacing:.02em}
 
   .lang-switcher{display:inline-flex;border:1px solid var(--ink);border-radius:3px;overflow:hidden;flex-shrink:0}
+  .lang-abbr{display:none}
   .lang-opt{appearance:none;border:0;border-right:1px solid var(--ink);background:var(--surface);
     color:var(--ink2);font:600 13px/1 var(--font);letter-spacing:.02em;
     padding:9px 12px;cursor:pointer;
@@ -313,7 +314,7 @@
   .lang-opt.active{background:var(--ink);color:var(--raised)}
 
   /* ── Export picker ──────────────────────────────────────────── */
-  .export-picker{position:relative}
+  .export-picker{position:relative;display:flex;align-items:center}
   .export-popup{position:absolute;top:calc(100% + 8px);right:0;
     background:var(--surface);border:1px solid var(--ink2);border-radius:6px;
     padding:6px;display:flex;flex-direction:column;gap:2px;min-width:130px;
@@ -357,22 +358,27 @@
 
   /* ── Mobile responsive layout ───────────────────────────── */
   @media (max-width:640px){
-    /* Topbar: 20vh, buttons wrap into multiple rows */
+    /* Topbar: auto height, wraps to as many rows as needed */
     .topbar{
       height:auto;
-      min-height:12vh;
-      max-height:12vh;
       flex-wrap:wrap;
       padding:6px 10px;
       gap:4px;
       align-content:flex-start;
-      overflow:hidden;
+      overflow:visible;
     }
     .topbar .spacer{display:none}
     .logo{width:100%;flex-shrink:0}
     .logo small{display:none}
-    .btn,.lang-opt,.export-opt{font-size:12px;padding:5px 9px}
-    .lang-opt{padding:4px 8px}
+    .btn,.lang-opt,.export-opt{font-size:12px;padding:4px 7px}
+    .lang-opt{padding:4px 6px}
+    /* hide controls useless on touch */
+    #remote-btn{display:none}
+    #help-btn{display:none}
+    #present-btn kbd{display:none}
+    .toggle-label{display:none}
+    .lang-full{display:none}
+    .lang-abbr{display:inline}
 
     /* Stage: column, canvas on top — editor on bottom */
     .stage{flex-direction:column}
@@ -382,7 +388,7 @@
     .splitter::before{inset:-3px 0;cursor:default}
     .splitter:hover{background:var(--line)}
 
-    /* Canvas/viewer: 30vh — floated to top via order */
+    /* Canvas/viewer: 38vh fixed */
     .canvas-pane{
       order:-1;
       width:100%;
@@ -391,13 +397,13 @@
       min-width:0;
     }
 
-    /* Editor: 50vh, sits below canvas */
+    /* Editor: fills remaining space after topbar + canvas */
     .editor-pane{
       width:100% !important;
       max-width:none;
       min-width:0;
-      height:50vh;
-      flex:0 0 50vh;
+      flex:1;
+      min-height:160px;
       border-right:none;
       border-top:1px solid var(--line);
     }
@@ -446,8 +452,8 @@
     </div>
   </div>
   <div class="lang-switcher" id="lang-switcher">
-    <button class="lang-opt" data-lang="en">English</button>
-    <button class="lang-opt" data-lang="uk">Українська</button>
+    <button class="lang-opt" data-lang="en"><span class="lang-full">English</span><span class="lang-abbr">EN</span></button>
+    <button class="lang-opt" data-lang="uk"><span class="lang-full">Українська</span><span class="lang-abbr">УК</span></button>
   </div>
 </header>
 
