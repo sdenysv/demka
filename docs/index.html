@@ -760,7 +760,7 @@ const STRINGS = {
     helpFeatures: [
       '<b>Markdown</b> — headings become slides, bullets reveal one by one',
       '<b>Cards / no-cards</b> mode toggle',
-      '<b>Color palette</b> — customizable themes',
+      '<b>Color palette</b> — customizable themes or set your own via front matter: <code>font_color</code>, <code>background_color</code>, <code>accent_color</code>',
       '<b>Timer</b> — total and per-slide time in presentation mode',
       '<b>Record</b> — screen recording with optional microphone',
       '<b>Export</b> — PDF, PPTX, Markdown',
@@ -829,7 +829,7 @@ const STRINGS = {
     helpFeatures: [
       '<b>Markdown</b> — заголовки стають слайдами, пункти розкриваються по одному',
       'Перемикач режиму <b>Картки</b>',
-      '<b>Палітра</b> — налаштовувати кольорові теми',
+      '<b>Палітра</b> — налаштовувати кольорові теми або задати свої через front matter: <code>font_color</code>, <code>background_color</code>, <code>accent_color</code>',
       '<b>Таймер</b> — загальний час і час на слайд у режимі презентації',
       '<b>Запис</b> — запис екрана з опціональним мікрофоном',
       '<b>Експорт</b> — зберегти слайди у файлі PDF, PPTX або Markdown',
@@ -898,10 +898,10 @@ function parseFrontMatter(src){
   const sepIdx = lines.findIndex(l => l.trim() === '---');
   if (sepIdx > 0){
     const header = lines.slice(0, sepIdx);
-    if (header.every(l => /^\s*$/.test(l) || /^[a-z]+:\s*.+/i.test(l))){
+    if (header.every(l => /^\s*$/.test(l) || /^[a-z_]+:\s*.+/i.test(l))){
       const meta = {};
       for (const l of header){
-        const m = l.match(/^([a-z]+):\s*(.+)/i);
+        const m = l.match(/^([a-z_]+):\s*(.+)/i);
         if (m) meta[m[1].toLowerCase()] = m[2].trim();
       }
       return { meta, content: lines.slice(sepIdx + 1).join('\n') };
@@ -1417,6 +1417,7 @@ function doRebuild(){
     world.style.transform = 'translate(0,0) scale(1)';
   }
   updateNavButtons();
+  applyMetaColors(meta);
 }
 
 function updateNavButtons(){
@@ -1852,6 +1853,28 @@ function exportPptx(){
 })();
 
 // ── Palette picker ───────────────────────────────────────────
+// ── Color helpers ────────────────────────────────────────────
+let basePalette = null;
+
+function applyMetaColors(meta){
+  const r = document.documentElement.style;
+  const nc = s => { s = s.trim(); return s.startsWith('#') ? s : '#' + s; };
+  // Reset to base palette first so stale overrides don't linger
+  if (basePalette) for (const k of PAL_VARS) if (basePalette[k]) r.setProperty('--' + k, basePalette[k]);
+  if (meta.font_color){
+    const c = nc(meta.font_color);
+    r.setProperty('--ink', c);
+    r.setProperty('--ink2', c);
+    r.setProperty('--active', c);
+  }
+  if (meta.background_color){
+    const c = nc(meta.background_color);
+    r.setProperty('--bg', c);
+    r.setProperty('--surface', c);
+  }
+  if (meta.accent_color) r.setProperty('--active', nc(meta.accent_color));
+}
+
 const PALETTES = [
   { name:'Stone',
     bg:'#dbdad7', surface:'#eeedea', raised:'#eeedea', ink:'#1a1a18',
@@ -1859,9 +1882,6 @@ const PALETTES = [
   { name:'Midnight',
     bg:'#111112', surface:'#1d1d20', raised:'#1d1d20', ink:'#edede9',
     ink2:'#9a9a96', mute:'#5a5a58', line:'#2e2e32', visited:'#3a3a3f', active:'#c8c8c4' },
-  { name:'Breeze',
-    bg:'#dce6f0', surface:'#edf2f8', raised:'#edf2f8', ink:'#162032',
-    ink2:'#3d5068', mute:'#7b92a8', line:'#c0cdd8', visited:'#cdd7e2', active:'#1e3045' },
   { name:'Amber',
     bg:'#1c1c1c', surface:'#242422', raised:'#2c2a28', ink:'#d9a441',
     ink2:'#b08838', mute:'#6b5528', line:'#2e2c28', visited:'#363330', active:'#f0b84d' },
@@ -1870,12 +1890,16 @@ const PALETTES = [
 const PAL_VARS = ['bg','surface','raised','ink','ink2','mute','line','visited','active'];
 
 function applyPalette(p){
+  basePalette = p;
   const root = document.documentElement.style;
   for (const k of PAL_VARS) if (p[k]) root.setProperty('--'+k, p[k]);
   document.getElementById('pdot-bg').style.background = p.bg;
   document.getElementById('pdot-surface').style.background = p.surface;
   document.getElementById('pdot-ink').style.background = p.ink;
   localStorage.setItem('demka.colors', JSON.stringify(p));
+  // Re-apply any frontmatter overrides on top of the new palette
+  const { meta } = parseFrontMatter(editor.value);
+  applyMetaColors(meta);
 }
 
 function buildPalettePopup(){
