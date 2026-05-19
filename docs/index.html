@@ -1533,11 +1533,11 @@ function togglePresent(){
     state.visited.clear();
     presentBtn.textContent = STRINGS[lang].presentExit;
     showHint();
-    document.documentElement.requestFullscreen?.().catch(()=>{});
+    if (!_mediaRec) document.documentElement.requestFullscreen?.().catch(()=>{});
     timerStart();
   } else {
     presentBtn.innerHTML = STRINGS[lang].presentBtn;
-    document.fullscreenElement && document.exitFullscreen?.().catch(()=>{});
+    !_mediaRec && document.fullscreenElement && document.exitFullscreen?.().catch(()=>{});
     timerStop();
   }
   updateActive();
