@@ -1930,6 +1930,11 @@ function applyMetaColors(meta){
     r.setProperty('--surface', c);
   }
   if (meta.accent_color) r.setProperty('--active', nc(meta.accent_color));
+  if (meta.card_color){
+    const c = nc(meta.card_color);
+    r.setProperty('--surface', c);
+    r.setProperty('--raised', c);
+  }
 }
 
 const PALETTES = [
