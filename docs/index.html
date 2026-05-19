@@ -267,7 +267,7 @@
   .palette-picker{position:relative;display:flex;align-items:center}
   .palette-popup{position:absolute;top:calc(100% + 8px);right:0;
     background:var(--surface);border:1px solid var(--ink2);border-radius:6px;
-    padding:6px;display:flex;flex-direction:column;gap:2px;min-width:172px;
+    padding:6px;display:flex;flex-direction:column;gap:2px;min-width:210px;
     z-index:200;opacity:0;pointer-events:none;transform:translateY(-4px);
     transition:opacity 140ms var(--ease),transform 140ms var(--ease);box-shadow:0 4px 16px rgba(0,0,0,.12)}
   .palette-popup.show{opacity:1;pointer-events:auto;transform:none}
@@ -280,6 +280,18 @@
   .pal-preset .p-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(0,0,0,.1)}
   .pal-preset .p-name{flex:1;text-align:left}
   .pal-preset .p-check{font-size:11px;color:var(--ink2);width:12px;text-align:center}
+  .pal-sep{height:1px;background:var(--line);margin:4px 2px}
+  .pal-custom-panel{display:none;flex-direction:column;gap:5px;padding:6px 8px 4px}
+  .pal-custom-panel.open{display:flex}
+  .pal-cust-row{display:flex;align-items:center;gap:8px}
+  .pal-cust-label{font-size:12px;color:var(--ink2);flex:1}
+  .pal-cust-inp{width:24px;height:20px;border:1px solid var(--line);border-radius:3px;
+    padding:1px;background:transparent;cursor:pointer;flex-shrink:0}
+  .pal-cust-hex{font-size:11px;color:var(--mute);font-family:var(--mono);cursor:pointer;
+    min-width:60px;padding:2px 4px;border-radius:2px;letter-spacing:.02em;
+    transition:background 80ms,color 80ms}
+  .pal-cust-hex:hover{background:var(--bg);color:var(--ink)}
+  .pal-cust-copied{color:var(--active)!important;background:var(--bg)!important}
 
   /* ── Remote modal ───────────────────────────────────────────── */
   .remote-modal{position:fixed;inset:0;background:rgba(26,26,24,.45);display:flex;
@@ -1856,6 +1868,51 @@ function exportPptx(){
 // ── Color helpers ────────────────────────────────────────────
 let basePalette = null;
 
+function blendHex(c1, c2, t){
+  const p = s => [parseInt(s.slice(1,3),16), parseInt(s.slice(3,5),16), parseInt(s.slice(5,7),16)];
+  const [a, b] = [p(c1), p(c2)];
+  return '#' + a.map((v,i) => Math.round(v*(1-t)+b[i]*t).toString(16).padStart(2,'0')).join('');
+}
+
+const CUSTOM_PAL_KEY = 'demka.custom-palette';
+const CUSTOM_DEFAULTS = { bg:'#dbdad7', surface:'#eeedea', ink:'#1a1a18', active:'#2e2e2a' };
+let customColors = null;
+
+function loadCustomColors(){
+  if (customColors) return;
+  try{ const s = localStorage.getItem(CUSTOM_PAL_KEY); if (s) customColors = JSON.parse(s); }catch(e){}
+  if (!customColors) customColors = { ...CUSTOM_DEFAULTS };
+}
+
+function saveCustomColors(){
+  try{ localStorage.setItem(CUSTOM_PAL_KEY, JSON.stringify(customColors)); }catch(e){}
+}
+
+function deriveCustomFull(c){
+  return {
+    name:'Custom', bg:c.bg, surface:c.surface, raised:c.surface, ink:c.ink, active:c.active,
+    ink2:    blendHex(c.ink, c.bg, 0.35),
+    mute:    blendHex(c.ink, c.bg, 0.58),
+    line:    blendHex(c.surface, c.ink, 0.20),
+    visited: blendHex(c.bg, c.ink, 0.18),
+  };
+}
+
+function applyCustomFull(){
+  loadCustomColors();
+  const full = deriveCustomFull(customColors);
+  basePalette = full;
+  const root = document.documentElement.style;
+  for (const k of PAL_VARS) if (full[k]) root.setProperty('--'+k, full[k]);
+  document.getElementById('pdot-bg').style.background = full.bg;
+  document.getElementById('pdot-surface').style.background = full.surface;
+  document.getElementById('pdot-ink').style.background = full.ink;
+  localStorage.setItem('demka.colors', JSON.stringify({name:'Custom'}));
+  saveCustomColors();
+  const { meta } = parseFrontMatter(editor.value);
+  applyMetaColors(meta);
+}
+
 function applyMetaColors(meta){
   const r = document.documentElement.style;
   const nc = s => { s = s.trim(); return s.startsWith('#') ? s : '#' + s; };
@@ -1902,10 +1959,21 @@ function applyPalette(p){
   applyMetaColors(meta);
 }
 
+const CUSTOM_FIELDS = [
+  { key:'bg',      label:'Background' },
+  { key:'surface', label:'Cards' },
+  { key:'ink',     label:'Text' },
+  { key:'active',  label:'Accent' },
+];
+
 function buildPalettePopup(){
+  loadCustomColors();
   const saved = JSON.parse(localStorage.getItem('demka.colors') || '{}');
   const curName = saved.name || 'Stone';
+  const isCustom = curName === 'Custom';
+  const full = deriveCustomFull(customColors);
   const popup = document.getElementById('palette-popup');
+
   popup.innerHTML = PALETTES.map(p => `
     <button class="pal-preset${p.name===curName?' current':''}" data-name="${p.name}">
       <span class="p-dots">
@@ -1915,11 +1983,59 @@ function buildPalettePopup(){
       </span>
       <span class="p-name">${p.name}</span>
       <span class="p-check">${p.name===curName?'✓':''}</span>
-    </button>`).join('');
-  popup.querySelectorAll('.pal-preset').forEach(btn => {
+    </button>`).join('') + `
+  <div class="pal-sep"></div>
+  <button class="pal-preset${isCustom?' current':''}" id="pal-custom-btn">
+    <span class="p-dots">
+      <span class="p-dot" style="background:${full.bg}"></span>
+      <span class="p-dot" style="background:${full.surface}"></span>
+      <span class="p-dot" style="background:${full.ink}"></span>
+    </span>
+    <span class="p-name">Custom</span>
+    <span class="p-check">${isCustom?'✓':'›'}</span>
+  </button>
+  <div class="pal-custom-panel${isCustom?' open':''}" id="pal-custom-panel">
+    ${CUSTOM_FIELDS.map(f => `
+    <div class="pal-cust-row">
+      <span class="pal-cust-label">${f.label}</span>
+      <input type="color" class="pal-cust-inp" data-key="${f.key}" value="${customColors[f.key]}">
+      <span class="pal-cust-hex" data-key="${f.key}">${customColors[f.key]}</span>
+    </div>`).join('')}
+  </div>`;
+
+  popup.querySelectorAll('.pal-preset[data-name]').forEach(btn => {
     btn.addEventListener('click', () => {
       const p = PALETTES.find(x => x.name === btn.dataset.name);
       if (p){ applyPalette(p); closePalettePopup(); }
+    });
+  });
+
+  const customBtn   = popup.querySelector('#pal-custom-btn');
+  const customPanel = popup.querySelector('#pal-custom-panel');
+
+  customBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const open = customPanel.classList.toggle('open');
+    if (open){ applyCustomFull(); customBtn.querySelector('.p-check').textContent = '✓'; }
+  });
+
+  customPanel.addEventListener('click', e => e.stopPropagation());
+
+  customPanel.querySelectorAll('.pal-cust-inp').forEach(inp => {
+    inp.addEventListener('input', () => {
+      customColors[inp.dataset.key] = inp.value;
+      const hexEl = customPanel.querySelector(`.pal-cust-hex[data-key="${inp.dataset.key}"]`);
+      if (hexEl) hexEl.textContent = inp.value;
+      saveCustomColors();
+      applyCustomFull();
+    });
+  });
+
+  customPanel.querySelectorAll('.pal-cust-hex').forEach(span => {
+    span.addEventListener('click', () => {
+      navigator.clipboard.writeText(span.textContent).catch(()=>{});
+      span.classList.add('pal-cust-copied');
+      setTimeout(() => span.classList.remove('pal-cust-copied'), 1200);
     });
   });
 }
@@ -1936,9 +2052,14 @@ document.addEventListener('click', closePalettePopup);
 
 // restore saved palette on load
 (function initPalette(){
+  loadCustomColors();
   const saved = JSON.parse(localStorage.getItem('demka.colors') || '{}');
-  const p = saved.name ? (PALETTES.find(x => x.name === saved.name) || PALETTES[0]) : PALETTES[0];
-  applyPalette(p);
+  if (saved.name === 'Custom'){
+    applyCustomFull();
+  } else {
+    const p = saved.name ? (PALETTES.find(x => x.name === saved.name) || PALETTES[0]) : PALETTES[0];
+    applyPalette(p);
+  }
 })();
 
 // ── Cards toggle ─────────────────────────────────────────────
