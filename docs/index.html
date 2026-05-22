@@ -1340,6 +1340,7 @@ const state = {
   baseCam: { x:0, y:0, scale:1 },
   footer: '',
   viewMode: 'timeline',
+  inFitAll: false,
 };
 
 function totalRevealSteps(n){
@@ -1484,6 +1485,7 @@ function renderBullet(b){
 }
 
 function updateActive(){
+  state.inFitAll = false;
   const active = state.nodes[state.activeIdx];
   $$('#world > .node').forEach(el => {
     el.classList.remove('active');
@@ -1601,6 +1603,9 @@ function zoomFitAll(){
   const pad = 32;
   const scale = Math.min((rect.width - pad*2) / b.w, (rect.height - pad*2) / b.h);
   applyCam((rect.width - b.w*scale)/2, (rect.height - b.h*scale)/2, scale, 1);
+  state.inFitAll = true;
+  $$('#world > .node').forEach(el => { el.classList.remove('active', 'visited'); });
+  $$('#connectors path').forEach(p => p.classList.remove('visited'));
 }
 
 // ── Navigation ───────────────────────────────────────────────
