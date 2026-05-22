@@ -2456,11 +2456,16 @@ const FIREBASE_CONFIG = {
 let _firebase = null;
 async function getFirebase(){
   if (_firebase) return _firebase;
-  const [{ initializeApp }, { getFirestore, doc, addDoc, getDoc, collection, serverTimestamp }] = await Promise.all([
+  const [{ initializeApp }, { getFirestore, doc, addDoc, getDoc, collection, serverTimestamp }, { initializeAppCheck, ReCaptchaV3Provider }] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js'),
     import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js'),
+    import('https://www.gstatic.com/firebasejs/12.13.0/firebase-app-check.js'),
   ]);
   const app = initializeApp(FIREBASE_CONFIG);
+  initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider('6Le8gfcsAAAAAFUeZX4qHRbwaXlSy28ml15AfZMr'),
+    isTokenAutoRefreshEnabled: true,
+  });
   const db = getFirestore(app);
   _firebase = { db, doc, addDoc, getDoc, collection, serverTimestamp };
   return _firebase;
