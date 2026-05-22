@@ -723,7 +723,7 @@
   <div class="help-card share-card">
     <div id="share-step-info">
       <h3>Share slides</h3>
-      <p>Everything is encoded directly into the link — no server, no account needed. Images are compressed to fit.</p>
+      <p>Your slides are saved to the cloud. Anyone with the link can view them — no account needed.</p>
       <div class="share-btns">
         <button class="btn" id="share-cancel">Cancel</button>
         <button class="btn primary" id="share-confirm">Create link</button>
@@ -743,7 +743,7 @@
       <div class="share-btns">
         <button class="btn" id="share-done-close">Close</button>
       </div>
-      <p class="share-note">self-contained · no server · images compressed to 420px</p>
+      <p class="share-note">stored in firebase · no account needed to view · images compressed to 420px</p>
     </div>
     <div id="share-step-error" style="display:none">
       <h3>Failed to create link</h3>
@@ -2443,7 +2443,53 @@ recordBtn.addEventListener('click', () => {
   recordModal.classList.add('show');
 });
 
-// ── Share (URL-encoded) ───────────────────────────────────────
+// ── Firebase share ────────────────────────────────────────────
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBMQMTFQwWaqDcId-knFXw0Fh5VQCqQo3k",
+  authDomain: "demka-944f1.firebaseapp.com",
+  projectId: "demka-944f1",
+  storageBucket: "demka-944f1.firebasestorage.app",
+  messagingSenderId: "981724617388",
+  appId: "1:981724617388:web:05533bc045233a33789d09",
+};
+
+let _firebase = null;
+async function getFirebase(){
+  if (_firebase) return _firebase;
+  const [{ initializeApp }, { getFirestore, doc, addDoc, getDoc, collection, serverTimestamp }] = await Promise.all([
+    import('https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js'),
+    import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js'),
+  ]);
+  const app = initializeApp(FIREBASE_CONFIG);
+  const db = getFirestore(app);
+  _firebase = { db, doc, addDoc, getDoc, collection, serverTimestamp };
+  return _firebase;
+}
+
+async function createFirestoreShare(){
+  const markdown = editor.value;
+  const imgs = {};
+  for (const [id, dataUrl] of imgStore.entries()){
+    if (markdown.includes('img:' + id))
+      imgs[id] = await compressImage(dataUrl, 420, 0.72);
+  }
+  const { db, addDoc, collection, serverTimestamp } = await getFirebase();
+  const ref = await addDoc(collection(db, 'shares'), {
+    md: markdown, imgs, created: serverTimestamp(),
+  });
+  return `${location.origin}${location.pathname}#share:${ref.id}`;
+}
+
+async function loadFirestoreShare(id){
+  const { db, doc, getDoc } = await getFirebase();
+  const snap = await getDoc(doc(db, 'shares', id));
+  if (!snap.exists()) throw new Error('Share not found.');
+  const { md, imgs } = snap.data();
+  for (const [imgId, dataUrl] of Object.entries(imgs || {})) imgStore.set(imgId, dataUrl);
+  return md;
+}
+
+// ── Share (URL-encoded, kept for backwards-compat) ────────────
 const shareModal      = $('#share-modal');
 const shareStepInfo    = $('#share-step-info');
 const shareStepLoading = $('#share-step-loading');
@@ -2468,7 +2514,7 @@ shareModal.addEventListener('click', e => { if (e.target===shareModal) closeShar
 $('#share-confirm').addEventListener('click', async () => {
   showShareStep('loading');
   try {
-    const url = await createUrlShare();
+    const url = await createFirestoreShare();
     $('#share-url-input').value = url;
     showShareStep('done');
   } catch(e) {
@@ -2618,9 +2664,13 @@ $$('.lang-opt').forEach(btn => {
 
 // ── Init ─────────────────────────────────────────────────────
 (async function init(){
-  const m = location.hash.match(/^#v1:(.+)$/);
-  if (m){
-    try { editor.value = await decodeUrlShare(m[1]); }
+  const mShare = location.hash.match(/^#share:(.+)$/);
+  const mV1    = location.hash.match(/^#v1:(.+)$/);
+  if (mShare){
+    try { editor.value = await loadFirestoreShare(mShare[1]); }
+    catch(e){ editor.value = load(); }
+  } else if (mV1){
+    try { editor.value = await decodeUrlShare(mV1[1]); }
     catch(e){ editor.value = load(); }
   } else {
     editor.value = load();
