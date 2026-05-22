@@ -78,19 +78,7 @@
   .stage{flex:1;display:flex;min-height:0;position:relative}
 
   .editor-pane{width:38%;min-width:280px;max-width:560px;background:var(--surface);
-    </style>
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-C016KPX3P5"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-C016KPX3P5');
-    </script>
-    border-right:1px solid var(--line);display:flex;flex-direction:column;position:relative;
-    transition:width 220ms var(--ease),min-width 220ms var(--ease)}
+    display:flex;flex-direction:column;border-right:1px solid var(--line);}
   body.editor-hidden .editor-pane{width:0;min-width:0;overflow:hidden;border-right:none}
   body.editor-hidden .splitter{display:none}
   .editor-pane .ed-head{flex:0 0 auto;padding:14px 22px 8px;display:flex;align-items:center;justify-content:space-between;color:var(--mute);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
@@ -551,6 +539,15 @@
     .palette-popup,.export-popup{right:auto;left:0}
   }
 </style>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-C016KPX3P5"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-C016KPX3P5');
+</script>
 </head>
 <body>
 
