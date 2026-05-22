@@ -391,15 +391,18 @@
   .toggle-sw input:checked ~ .toggle-track .toggle-thumb{transform:translateX(13px)}
   .toggle-label{font:600 13px/1 var(--font);color:var(--ink);letter-spacing:.02em}
 
-  .lang-switcher{display:inline-flex;border:1px solid var(--ink);border-radius:3px;overflow:hidden;flex-shrink:0}
-  .lang-abbr{display:none}
-  .lang-opt{appearance:none;border:0;border-right:1px solid var(--ink);background:var(--surface);
-    color:var(--ink2);font:600 13px/1 var(--font);letter-spacing:.02em;
-    padding:9px 12px;cursor:pointer;
-    transition:background 120ms var(--ease),color 120ms var(--ease)}
-  .lang-opt:last-child{border-right:0}
-  .lang-opt:hover:not(.active){background:var(--bg)}
-  .lang-opt.active{background:var(--ink);color:var(--raised)}
+  .lang-picker{position:relative;display:flex;align-items:center}
+  .lang-popup{position:absolute;top:calc(100% + 8px);right:0;
+    background:var(--surface);border:1px solid var(--ink2);border-radius:6px;
+    padding:6px;display:flex;flex-direction:column;gap:2px;min-width:130px;
+    z-index:200;opacity:0;pointer-events:none;transform:translateY(-4px);
+    transition:opacity 140ms var(--ease),transform 140ms var(--ease);box-shadow:0 4px 16px rgba(0,0,0,.12)}
+  .lang-popup.show{opacity:1;pointer-events:auto;transform:none}
+  .lang-opt{appearance:none;border:0;background:transparent;width:100%;
+    font:500 13px/1 var(--font);color:var(--ink);padding:8px 10px;border-radius:4px;
+    cursor:pointer;text-align:left;transition:background 100ms var(--ease)}
+  .lang-opt:hover{background:var(--bg)}
+  .lang-opt.active{background:var(--bg);font-weight:600}
 
   /* ── Export picker ──────────────────────────────────────────── */
   .export-picker{position:relative;display:flex;align-items:center}
@@ -488,14 +491,11 @@
     .logo{width:100%;flex-shrink:0}
     .logo small{display:none}
     .btn,.lang-opt,.export-opt{font-size:12px;padding:4px 7px}
-    .lang-opt{padding:4px 6px}
     /* hide controls useless on touch */
     #remote-btn{display:none}
     #help-btn{display:none}
     #present-btn kbd{display:none}
     .toggle-label{display:none}
-    .lang-full{display:none}
-    .lang-abbr{display:inline}
 
     /* Stage: column, canvas on top — editor on bottom */
     .stage{flex-direction:column}
@@ -594,9 +594,12 @@
       <button class="export-opt" id="exp-md">Markdown <span class="exp-badge">text</span></button>
     </div>
   </div>
-  <div class="lang-switcher" id="lang-switcher">
-    <button class="lang-opt" data-lang="en"><span class="lang-full">English</span><span class="lang-abbr">EN</span></button>
-    <button class="lang-opt" data-lang="uk"><span class="lang-full">Українська</span><span class="lang-abbr">УК</span></button>
+  <div class="lang-picker" id="lang-picker">
+    <button class="btn" id="lang-btn">EN <span class="arrow">▾</span></button>
+    <div class="lang-popup" id="lang-popup">
+      <button class="lang-opt" data-lang="en">English</button>
+      <button class="lang-opt" data-lang="uk">Українська</button>
+    </div>
   </div>
   <button class="btn" id="help-btn" title="Keyboard shortcuts">?</button>
 </header>
@@ -1001,6 +1004,9 @@ function applyLang(){
   document.getElementById('record-btn').innerHTML = _mediaRec ? s.recordStop : s.recordBtn;
   document.getElementById('remote-btn').textContent = s.remoteBtn;
   if (state.present){ presentBtn.textContent = s.presentExit; } else { presentBtn.innerHTML = s.presentBtn; }
+  const langAbbr = { en: 'EN', uk: 'УК' };
+  const langBtnEl = document.getElementById('lang-btn');
+  if (langBtnEl) langBtnEl.innerHTML = (langAbbr[lang] || lang.toUpperCase()) + ' <span class="arrow">▾</span>';
   document.querySelectorAll('.lang-opt').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
   document.getElementById('ed-head-label').textContent = s.editorHead;
   if (!editorPane.classList.contains('dirty')) saveLabel.textContent = s.saveSaved;
@@ -2591,10 +2597,15 @@ $('#view-popup').querySelectorAll('.view-opt').forEach(btn => {
 
 // ── Language switcher ─────────────────────────────────────────
 (function initLang(){ applyLang(); })();
+const langPopup = $('#lang-popup');
+$('#lang-btn').addEventListener('click', e => { e.stopPropagation(); langPopup.classList.toggle('show'); });
+document.addEventListener('click', () => langPopup.classList.remove('show'));
+langPopup.addEventListener('click', e => e.stopPropagation());
 $$('.lang-opt').forEach(btn => {
   btn.addEventListener('click', () => {
     const prev = lang;
     lang = btn.dataset.lang;
+    langPopup.classList.remove('show');
     localStorage.setItem('demka.lang', lang);
     if (editor.value.trim() === EXAMPLES[prev].trim()){
       editor.value = EXAMPLES[lang];
