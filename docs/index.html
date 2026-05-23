@@ -315,6 +315,7 @@
   .pal-preset .p-name{flex:1;text-align:left}
   .pal-preset .p-check{font-size:11px;color:var(--ink2);width:12px;text-align:center}
   .pal-sep{height:1px;background:var(--line);margin:4px 2px}
+  .group-label{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);padding:6px 10px 2px}
   .pal-custom-panel{display:none;flex-direction:column;gap:5px;padding:6px 8px 4px}
   .pal-custom-panel.open{display:flex}
   .pal-cust-row{display:flex;align-items:center;gap:8px}
@@ -534,7 +535,7 @@
     .nav-chev svg{width:20px;height:20px}
 
     /* Popups: anchor to left edge so they don't overflow */
-    .view-popup,.export-popup{right:auto;left:0}
+    .view-popup,#share-export-popup{right:auto;left:0}
   }
 </style>
 
@@ -578,25 +579,27 @@
       <span class="arrow">▾</span>
     </button>
     <div class="view-popup" id="view-popup">
-      <button class="view-opt current" data-view="timeline"><span class="v-icon"><svg viewBox="0 0 20 14" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="7" x2="16" y2="7"/><polyline points="11,3 16,7 11,11"/></svg></span>Timeline<span class="v-check">✓</span></button>
-      <button class="view-opt" data-view="map"><span class="v-icon"><svg viewBox="0 0 20 14" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="2" x2="17" y2="12"/><line x1="17" y1="2" x2="3" y2="12"/></svg></span>Map</button>
-      <button class="view-opt" data-view="logic"><span class="v-icon"><svg viewBox="0 0 20 14" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2" x2="4" y2="12"/><line x1="4" y1="7" x2="16" y2="2"/><line x1="4" y1="7" x2="16" y2="12"/></svg></span>Logic</button>
+      <button class="view-opt current" data-view="timeline"><span class="v-icon"><svg viewBox="0 0 20 14" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="7" x2="16" y2="7"/><polyline points="11,3 16,7 11,11"/></svg></span><span class="v-name">Timeline</span><span class="v-check">✓</span></button>
+      <button class="view-opt" data-view="map"><span class="v-icon"><svg viewBox="0 0 20 14" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="2" x2="17" y2="12"/><line x1="17" y1="2" x2="3" y2="12"/></svg></span><span class="v-name">Map</span></button>
+      <button class="view-opt" data-view="logic"><span class="v-icon"><svg viewBox="0 0 20 14" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2" x2="4" y2="12"/><line x1="4" y1="7" x2="16" y2="2"/><line x1="4" y1="7" x2="16" y2="12"/></svg></span><span class="v-name">Logic</span></button>
       <div class="pal-sep" style="margin:6px 2px 4px"></div>
       <div id="palette-popup"></div>
     </div>
   </div>
   <button class="btn" id="remote-btn" title="Phone remote">Clicker</button>
   <button class="btn" id="record-btn" title="Record presentation">&#9679; Record</button>
-  <button class="btn" id="share-btn" title="Share demka">Share</button>
-  <button class="btn primary" id="present-btn">&#9654; Present <kbd>F</kbd></button>
-  <div class="export-picker" id="export-picker">
-    <button class="btn" id="export-btn">Export &#9662;</button>
-    <div class="export-popup" id="export-popup">
+  <div class="export-picker" id="share-export-picker">
+    <button class="btn" id="share-export-btn">Share <span class="arrow">▾</span></button>
+    <div class="export-popup" id="share-export-popup">
+      <button class="export-opt" id="share-btn"><span id="share-export-label">Link</span> <span class="exp-badge">cloud</span></button>
+      <div class="pal-sep"></div>
+      <div class="group-label" id="download-label">Download</div>
       <button class="export-opt" id="exp-pdf">PDF <span class="exp-badge">print</span></button>
       <button class="export-opt" id="exp-pptx">PPTX <span class="exp-badge">slides</span></button>
       <button class="export-opt" id="exp-md">Markdown <span class="exp-badge">text</span></button>
     </div>
   </div>
+  <button class="btn primary" id="present-btn">&#9654; Present <kbd>F</kbd></button>
   <div class="lang-picker" id="lang-picker">
     <button class="btn" id="lang-btn">EN <span class="arrow">▾</span></button>
     <div class="lang-popup" id="lang-popup">
@@ -922,7 +925,13 @@ const STRINGS = {
       ['0', 'Overview — fit all nodes on screen'],
       ['?', 'Show this'],
     ],
+    viewLabels: { timeline:'Timeline', map:'Map', logic:'Logic' },
+    paletteCustom: 'Custom',
+    paletteNames: { Stone:'Stone', Midnight:'Midnight', Amber:'Amber' },
+    customFieldLabels: { bg:'Background', surface:'Cards', ink:'Text', active:'Accent' },
     shareBtn: 'Share',
+    shareLink: 'Link',
+    shareDownloadLabel: 'Download',
     shareInfoTitle: 'Share demka',
     shareInfoDesc: ['Your demka will be saved to the cloud.', 'Anyone with the link can view it — no account needed.', 'Link is stored for 1 month.'],
     shareCancel: 'Cancel',
@@ -1006,20 +1015,26 @@ const STRINGS = {
       ['End', 'До кінця'],
       ['?', 'Показати це'],
     ],
+    viewLabels: { timeline:'Таймлайн', map:'Мапа', logic:'Логіка' },
+    paletteCustom: 'Власний',
+    paletteNames: { Stone:'Камінь', Midnight:'Ніч', Amber:'Бурштин' },
+    customFieldLabels: { bg:'Фон', surface:'Картки', ink:'Текст', active:'Акцент' },
     shareBtn: 'Поділитись',
+    shareLink: 'Покликання',
+    shareDownloadLabel: 'Завантажити',
     shareInfoTitle: 'Поділитись демкою',
-    shareInfoDesc: ['Вашу демку буде збережено в хмарі.', 'Переглянути може кожен за посиланням — акаунт не потрібен.', 'Посилання зберігається 1 місяць.'],
+    shareInfoDesc: ['Вашу демку буде збережено в хмарі.', 'Переглянути може кожен за покликанням — акаунт не потрібен.', 'Покликання зберігається 1 місяць.'],
     shareCancel: 'Скасувати',
-    shareConfirm: 'Створити посилання',
-    shareLoadingTitle: 'Створення посилання…',
+    shareConfirm: 'Створити покликання',
+    shareLoadingTitle: 'Створення покликання…',
     shareLoadingText: 'Стиснення демки',
-    shareDoneTitle: 'Посилання готове',
-    shareDoneDesc: 'Переглянути цю демку може кожен за цим посиланням.',
-    shareExpiresLabel: 'Посилання дійсне до:',
+    shareDoneTitle: 'Покликання готове',
+    shareDoneDesc: 'Переглянути цю демку може кожен за цим покликанням.',
+    shareExpiresLabel: 'Покликання дійсне до:',
     shareCopy: 'Копіювати',
     shareNotes: ['зберігається в firebase', 'для перегляду акаунт не потрібен', 'зображення стиснені до 420px'],
     shareDoneClose: 'Закрити',
-    shareErrorTitle: 'Помилка створення посилання',
+    shareErrorTitle: 'Помилка створення покликання',
     shareErrorClose: 'Закрити',
   },
 };
@@ -1061,13 +1076,20 @@ function applyLang(){
   document.getElementById('phone-status-text').textContent = s[phoneStatusKey];
   const retryEl = document.getElementById('phone-retry');
   if (retryEl) retryEl.textContent = s.phoneRetry;
-  document.getElementById('export-btn').textContent = s.exportBtn + ' ▾';
+  document.getElementById('share-export-btn').innerHTML = s.shareBtn + ' <span class="arrow">▾</span>';
   document.querySelector('.help-card h3').textContent = s.helpTitle;
   document.getElementById('help-close').textContent = s.helpGotIt;
   document.getElementById('help-features-title').textContent = s.helpFeatureTitle;
   document.getElementById('help-features').innerHTML = s.helpFeatures.map(f => `<li>${f}</li>`).join('');
   document.querySelector('.help-card dl').innerHTML = s.helpRows.map(([k,d]) => `<dt>${k}</dt><dd>${d}</dd>`).join('');
-  document.getElementById('share-btn').textContent = s.shareBtn;
+  $('#view-btn-label').textContent = VIEW_LABELS()[state.viewMode];
+  $$('.view-opt[data-view]').forEach(btn => {
+    const nameEl = btn.querySelector('.v-name');
+    if (nameEl) nameEl.textContent = s.viewLabels[btn.dataset.view];
+  });
+  buildPalettePopup();
+  document.getElementById('share-export-label').textContent = s.shareLink;
+  document.getElementById('download-label').textContent = s.shareDownloadLabel;
   document.getElementById('share-info-title').textContent = s.shareInfoTitle;
   document.getElementById('share-info-desc').innerHTML = s.shareInfoDesc.map(t => `<li>${t}</li>`).join('');
   document.getElementById('share-cancel').textContent = s.shareCancel;
@@ -2248,11 +2270,12 @@ function exportPptx(){
 }
 
 (function initExport(){
-  const popup = $('#export-popup');
-  $('#export-btn').addEventListener('click', e => {
+  const popup = $('#share-export-popup');
+  $('#share-export-btn').addEventListener('click', e => {
     e.stopPropagation();
     popup.classList.toggle('show');
   });
+  $('#share-btn').addEventListener('click', () => { popup.classList.remove('show'); openShareModal(); });
   $('#exp-pdf').addEventListener('click',  () => { popup.classList.remove('show'); exportPdf(); });
   $('#exp-pptx').addEventListener('click', () => { popup.classList.remove('show'); exportPptx(); });
   $('#exp-md').addEventListener('click',   () => { popup.classList.remove('show'); exportMarkdown(); });
@@ -2381,7 +2404,7 @@ function buildPalettePopup(){
         <span class="p-dot" style="background:${p.surface}"></span>
         <span class="p-dot" style="background:${p.ink}"></span>
       </span>
-      <span class="p-name">${p.name}</span>
+      <span class="p-name">${STRINGS[lang].paletteNames[p.name] || p.name}</span>
       <span class="p-check">${p.name===curName?'✓':''}</span>
     </button>`).join('') + `
   <div class="pal-sep"></div>
@@ -2391,13 +2414,13 @@ function buildPalettePopup(){
       <span class="p-dot" style="background:${full.surface}"></span>
       <span class="p-dot" style="background:${full.ink}"></span>
     </span>
-    <span class="p-name">Custom</span>
+    <span class="p-name">${STRINGS[lang].paletteCustom}</span>
     <span class="p-check">${isCustom?'✓':'›'}</span>
   </button>
   <div class="pal-custom-panel${isCustom?' open':''}" id="pal-custom-panel">
     ${CUSTOM_FIELDS.map(f => `
     <div class="pal-cust-row">
-      <span class="pal-cust-label">${f.label}</span>
+      <span class="pal-cust-label">${STRINGS[lang].customFieldLabels[f.key] || f.label}</span>
       <input type="color" class="pal-cust-inp" data-key="${f.key}" value="${customColors[f.key]}">
       <span class="pal-cust-hex" data-key="${f.key}">${customColors[f.key]}</span>
     </div>`).join('')}
@@ -2723,7 +2746,7 @@ $('#ed-show-tab').addEventListener('click', toggleEditor);
 if (localStorage.getItem('demka.editorHidden')) document.body.classList.add('editor-hidden');
 
 // ── View / layout picker ──────────────────────────────────────
-const VIEW_LABELS = { timeline:'Timeline', map:'Map', logic:'Logic' };
+const VIEW_LABELS = () => STRINGS[lang].viewLabels;
 
 function openViewPopup(){
   const popup = $('#view-popup');
@@ -2754,7 +2777,7 @@ function applyViewClass(){
 $('#view-popup').querySelectorAll('.view-opt').forEach(btn => {
   btn.addEventListener('click', () => {
     state.viewMode = btn.dataset.view;
-    $('#view-btn-label').textContent = VIEW_LABELS[state.viewMode];
+    $('#view-btn-label').textContent = VIEW_LABELS()[state.viewMode];
     localStorage.setItem('demka.viewMode', state.viewMode);
     applyViewClass();
     closeViewPopup();
@@ -2765,9 +2788,9 @@ $('#view-popup').querySelectorAll('.view-opt').forEach(btn => {
 
 (function initViewMode(){
   const saved = localStorage.getItem('demka.viewMode');
-  if (saved && VIEW_LABELS[saved]){
+  if (saved && VIEW_LABELS()[saved]){
     state.viewMode = saved;
-    $('#view-btn-label').textContent = VIEW_LABELS[saved];
+    $('#view-btn-label').textContent = VIEW_LABELS()[saved];
   }
   applyViewClass();
 })();
