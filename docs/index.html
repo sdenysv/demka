@@ -414,7 +414,7 @@
   .view-picker{position:relative;display:flex;align-items:center}
   .view-popup{position:absolute;top:calc(100% + 8px);right:0;
     background:var(--surface);border:1px solid var(--ink2);border-radius:6px;
-    padding:6px;display:flex;flex-direction:column;gap:2px;min-width:140px;
+    padding:6px;display:flex;flex-direction:column;gap:2px;min-width:220px;
     z-index:200;opacity:0;pointer-events:none;transform:translateY(-4px);
     transition:opacity 140ms var(--ease),transform 140ms var(--ease);box-shadow:0 4px 16px rgba(0,0,0,.12)}
   .view-popup.show{opacity:1;pointer-events:auto;transform:none}
@@ -574,22 +574,22 @@
     <span class="toggle-label" id="timer-label">Timer</span>
   </label>
   <div class="view-picker" id="view-picker">
-    <button class="btn" id="view-btn" title="Layout style"><span id="view-btn-label">Timeline</span> <span class="arrow">▾</span></button>
-    <div class="view-popup" id="view-popup">
-      <button class="view-opt current" data-view="timeline"><span class="v-icon">↔</span>Timeline<span class="v-check">✓</span></button>
-      <button class="view-opt" data-view="map"><span class="v-icon">◎</span>Map</button>
-      <button class="view-opt" data-view="logic"><span class="v-icon">↕</span>Logic</button>
-    </div>
-  </div>
-  <div class="palette-picker" id="palette-picker">
-    <button class="btn" id="palette-btn" title="Color theme">
-      <span class="pal-btn-dots" id="pal-btn-dots">
+    <button class="btn" id="view-btn" title="Layout &amp; color">
+      <span id="view-btn-label">Timeline</span>
+      <span class="pal-btn-dots" id="pal-btn-dots" style="margin-left:6px">
         <span class="pal-btn-dot" id="pdot-bg"></span>
         <span class="pal-btn-dot" id="pdot-surface"></span>
         <span class="pal-btn-dot" id="pdot-ink"></span>
       </span>
+      <span class="arrow">▾</span>
     </button>
-    <div class="palette-popup" id="palette-popup"></div>
+    <div class="view-popup" id="view-popup">
+      <button class="view-opt current" data-view="timeline"><span class="v-icon">↔</span>Timeline<span class="v-check">✓</span></button>
+      <button class="view-opt" data-view="map"><span class="v-icon">◎</span>Map</button>
+      <button class="view-opt" data-view="logic"><span class="v-icon">↕</span>Logic</button>
+      <div class="pal-sep" style="margin:6px 2px 4px"></div>
+      <div id="palette-popup"></div>
+    </div>
   </div>
   <button class="btn" id="remote-btn" title="Phone remote">Clicker</button>
   <button class="btn" id="record-btn" title="Record presentation">&#9679; Record</button>
