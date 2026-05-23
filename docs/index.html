@@ -299,7 +299,7 @@
   .share-spinner{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--ink);border-radius:50%;animation:share-spin 600ms linear infinite;flex-shrink:0}
   @keyframes share-spin{to{transform:rotate(360deg)}}
   .share-error-msg{font-size:13px;color:var(--ink2);margin:8px 0 18px;line-height:1.5}
-  .share-note{font-size:11px;color:var(--mute);font-family:var(--mono);margin-top:10px;line-height:1.6}
+  .share-note{font-size:11px;color:var(--mute);font-family:var(--mono);margin-top:10px;line-height:1.6;list-style:disc;padding-left:16px}
 
   /* ── Palette picker ─────────────────────────────────────────── */
   .pal-btn-dots{display:flex;gap:3px;align-items:center;height:1em}
@@ -738,12 +738,16 @@
     </div>
     <div id="share-step-done" style="display:none">
       <h3>Link ready</h3>
-      <p>Anyone with this link can view your slides.</p>
+      <p>Anyone with this link can view your demka.</p>
       <div class="share-url-row">
         <input type="text" class="share-url-input" id="share-url-input" readonly>
         <button class="share-copy-btn" id="share-copy-btn">Copy</button>
       </div>
-      <p class="share-note">stored in firebase · no account needed to view · images compressed to 420px</p>
+      <ul class="share-note">
+        <li>stored in firebase</li>
+        <li>no account needed to view</li>
+        <li>images compressed to 420px</li>
+      </ul>
       <div class="share-btns">
         <button class="btn" id="share-done-close">Close</button>
       </div>
