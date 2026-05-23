@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.9.0] - 2026-05-23
+
+### Added
+- Ukrainian translations for view labels (Таймлайн / Карта / Логіка) and color palette names (Камінь / Північ / Бурштин)
+- Ukrainian translations for custom color field labels (Фон / Картки / Текст / Акцент) and "Custom" → "Власний"
+
+### Changed
+- Share and Export merged into a single "Share ▾" dropdown with a "Download" group header
+- "Download" group header translates to "Завантажити" in Ukrainian
+- "посилання" replaced with "покликання" throughout all Ukrainian share strings
+
+---
+
 ## [2.8.0] - 2026-05-23
 
 ### Added
