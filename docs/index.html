@@ -299,6 +299,7 @@
   @keyframes share-spin{to{transform:rotate(360deg)}}
   .share-error-msg{font-size:13px;color:var(--ink2);margin:8px 0 18px;line-height:1.5}
   .share-note{font-size:11px;color:var(--mute);font-family:var(--mono);margin-top:10px;line-height:1.6;list-style:disc;padding-left:16px}
+  #share-info-desc{font-size:14px;color:var(--ink);font-family:var(--font)}
 
   /* ── Palette picker ─────────────────────────────────────────── */
   .pal-btn-dots{display:flex;gap:3px;align-items:center;height:1em}
@@ -586,7 +587,7 @@
   </div>
   <button class="btn" id="remote-btn" title="Phone remote">Clicker</button>
   <button class="btn" id="record-btn" title="Record presentation">&#9679; Record</button>
-  <button class="btn" id="share-btn" title="Share slides">Share</button>
+  <button class="btn" id="share-btn" title="Share demka">Share</button>
   <button class="btn primary" id="present-btn">&#9654; Present <kbd>F</kbd></button>
   <div class="export-picker" id="export-picker">
     <button class="btn" id="export-btn">Export &#9662;</button>
@@ -725,25 +726,26 @@
 <div class="help" id="share-modal">
   <div class="help-card share-card">
     <div id="share-step-info">
-      <h3>Share slides</h3>
-      <p>Your slides are saved to the cloud. Anyone with the link can view them — no account needed.</p>
+      <h3 id="share-info-title">Share demka</h3>
+      <ul class="share-note" id="share-info-desc"></ul>
       <div class="share-btns">
         <button class="btn" id="share-cancel">Cancel</button>
         <button class="btn primary" id="share-confirm">Create link</button>
       </div>
     </div>
     <div id="share-step-loading" style="display:none">
-      <h3>Creating link…</h3>
-      <div class="share-loading-row"><span class="share-spinner"></span>Compressing slides</div>
+      <h3 id="share-loading-title">Creating link…</h3>
+      <div class="share-loading-row"><span class="share-spinner"></span><span id="share-loading-text">Compressing demka</span></div>
     </div>
     <div id="share-step-done" style="display:none">
-      <h3>Link ready</h3>
-      <p>Anyone with this link can view your demka.<br><strong>Link expires at: <span id="share-expires"></span></strong></p>
+      <h3 id="share-done-title">Link ready</h3>
+      <p id="share-done-desc">Anyone with this link can view your demka.</p>
+      <p><strong><span id="share-expires-label">Link expires at:</span> <span id="share-expires"></span></strong></p>
       <div class="share-url-row">
         <input type="text" class="share-url-input" id="share-url-input" readonly>
         <button class="share-copy-btn" id="share-copy-btn">Copy</button>
       </div>
-      <ul class="share-note">
+      <ul class="share-note" id="share-note-list">
         <li>stored in firebase</li>
         <li>no account needed to view</li>
         <li>images compressed to 420px</li>
@@ -753,7 +755,7 @@
       </div>
     </div>
     <div id="share-step-error" style="display:none">
-      <h3>Failed to create link</h3>
+      <h3 id="share-error-title">Failed to create link</h3>
       <p class="share-error-msg" id="share-error-msg">Something went wrong.</p>
       <div class="share-btns">
         <button class="btn" id="share-error-close">Close</button>
@@ -920,6 +922,21 @@ const STRINGS = {
       ['0', 'Overview — fit all nodes on screen'],
       ['?', 'Show this'],
     ],
+    shareBtn: 'Share',
+    shareInfoTitle: 'Share demka',
+    shareInfoDesc: ['Your demka will be saved to the cloud.', 'Anyone with the link can view it — no account needed.', 'Link is stored for 1 month.'],
+    shareCancel: 'Cancel',
+    shareConfirm: 'Create link',
+    shareLoadingTitle: 'Creating link…',
+    shareLoadingText: 'Compressing demka',
+    shareDoneTitle: 'Link ready',
+    shareDoneDesc: 'Anyone with this link can view your demka.',
+    shareExpiresLabel: 'Link expires at:',
+    shareCopy: 'Copy',
+    shareNotes: ['stored in firebase', 'no account needed to view', 'images compressed to 420px'],
+    shareDoneClose: 'Close',
+    shareErrorTitle: 'Failed to create link',
+    shareErrorClose: 'Close',
   },
   uk: {
     logoSubtitle: '· markdown → слайди',
@@ -989,6 +1006,21 @@ const STRINGS = {
       ['End', 'До кінця'],
       ['?', 'Показати це'],
     ],
+    shareBtn: 'Поділитись',
+    shareInfoTitle: 'Поділитись демкою',
+    shareInfoDesc: ['Вашу демку буде збережено в хмарі.', 'Переглянути може кожен за посиланням — акаунт не потрібен.', 'Посилання зберігається 1 місяць.'],
+    shareCancel: 'Скасувати',
+    shareConfirm: 'Створити посилання',
+    shareLoadingTitle: 'Створення посилання…',
+    shareLoadingText: 'Стиснення демки',
+    shareDoneTitle: 'Посилання готове',
+    shareDoneDesc: 'Переглянути цю демку може кожен за цим посиланням.',
+    shareExpiresLabel: 'Посилання дійсне до:',
+    shareCopy: 'Копіювати',
+    shareNotes: ['зберігається в firebase', 'для перегляду акаунт не потрібен', 'зображення стиснені до 420px'],
+    shareDoneClose: 'Закрити',
+    shareErrorTitle: 'Помилка створення посилання',
+    shareErrorClose: 'Закрити',
   },
 };
 let lang = localStorage.getItem('demka.lang') || 'en';
@@ -1035,6 +1067,21 @@ function applyLang(){
   document.getElementById('help-features-title').textContent = s.helpFeatureTitle;
   document.getElementById('help-features').innerHTML = s.helpFeatures.map(f => `<li>${f}</li>`).join('');
   document.querySelector('.help-card dl').innerHTML = s.helpRows.map(([k,d]) => `<dt>${k}</dt><dd>${d}</dd>`).join('');
+  document.getElementById('share-btn').textContent = s.shareBtn;
+  document.getElementById('share-info-title').textContent = s.shareInfoTitle;
+  document.getElementById('share-info-desc').innerHTML = s.shareInfoDesc.map(t => `<li>${t}</li>`).join('');
+  document.getElementById('share-cancel').textContent = s.shareCancel;
+  document.getElementById('share-confirm').textContent = s.shareConfirm;
+  document.getElementById('share-loading-title').textContent = s.shareLoadingTitle;
+  document.getElementById('share-loading-text').textContent = s.shareLoadingText;
+  document.getElementById('share-done-title').textContent = s.shareDoneTitle;
+  document.getElementById('share-done-desc').textContent = s.shareDoneDesc;
+  document.getElementById('share-expires-label').textContent = s.shareExpiresLabel;
+  document.getElementById('share-copy-btn').textContent = s.shareCopy;
+  document.getElementById('share-note-list').innerHTML = s.shareNotes.map(t => `<li>${t}</li>`).join('');
+  document.getElementById('share-done-close').textContent = s.shareDoneClose;
+  document.getElementById('share-error-title').textContent = s.shareErrorTitle;
+  document.getElementById('share-error-close').textContent = s.shareErrorClose;
 }
 
 // ── Front matter parser ──────────────────────────────────────
@@ -1783,7 +1830,7 @@ function updateNavButtons(){
 }
 
 // ── Persistence ──────────────────────────────────────────────
-const APP_VERSION = '2.7.0';
+const APP_VERSION = '2.8.0';
 const STORAGE_KEY = 'demka.md';
 const IMG_KEY_PREFIX = 'demka.img.';
 
@@ -2604,7 +2651,7 @@ $('#share-copy-btn').addEventListener('click', () => {
   navigator.clipboard.writeText(val).catch(() => { const i=$('#share-url-input'); i.select(); document.execCommand('copy'); });
   const btn = $('#share-copy-btn');
   btn.textContent = 'Copied!'; btn.classList.add('copied');
-  setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  setTimeout(() => { btn.textContent = STRINGS[lang].shareCopy; btn.classList.remove('copied'); }, 2000);
 });
 
 function compressImage(dataUrl, maxWidth, quality){
