@@ -2481,7 +2481,7 @@ async function createFirestoreShare(){
       imgs[id] = await compressImage(dataUrl, 420, 0.72);
   }
   const { db, doc, addDoc, setDoc, collection, serverTimestamp } = await getFirebase();
-  const data = { md: markdown, imgs, created: serverTimestamp() };
+  const data = { md: markdown, imgs, created: serverTimestamp(), expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) };
   if (currentShareId){
     await setDoc(doc(db, 'shares', currentShareId), data);
     return `${location.origin}${location.pathname}#share:${currentShareId}`;
