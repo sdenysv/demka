@@ -55,8 +55,7 @@
   .topbar{height:48px;flex:0 0 48px;display:flex;align-items:center;
     padding:0 16px 0 20px;background:var(--bg);border-bottom:1px solid var(--line);
     gap:12px;user-select:none}
-  .logo{font-weight:800;font-size:18px;letter-spacing:-.02em;color:var(--ink);display:flex;align-items:baseline;gap:8px}
-  .logo .dot{width:8px;height:8px;background:var(--active);display:inline-block;border-radius:2px;transform:translateY(-2px)}
+  .logo{font-weight:800;font-size:18px;letter-spacing:-.02em;color:var(--ink);display:flex;align-items:baseline;gap:8px}  .logo .dot{width:8px;height:8px;background:var(--active);display:inline-block;border-radius:2px;transform:translateY(-2px)}
   .logo small{font-weight:500;font-size:12px;color:var(--ink2);letter-spacing:0}
   .topbar .spacer{flex:1}
   .topbar .meta{font-size:12px;color:var(--mute);font-family:var(--mono);letter-spacing:.02em}
@@ -717,6 +716,7 @@
     </dl>
     <h4 class="help-features-title" id="help-features-title">Features</h4>
     <ul class="help-features" id="help-features"></ul>
+    <div class="help-credit" id="app-ver"></div>
     <div class="help-credit">created by Denys Skvortsov</div>
     <div class="close"><button class="btn" id="help-close">Got it</button></div>
   </div>
@@ -1783,6 +1783,7 @@ function updateNavButtons(){
 }
 
 // ── Persistence ──────────────────────────────────────────────
+const APP_VERSION = '1.7.0';
 const STORAGE_KEY = 'demka.md';
 const IMG_KEY_PREFIX = 'demka.img.';
 
@@ -2725,6 +2726,7 @@ $('#view-popup').querySelectorAll('.view-opt').forEach(btn => {
 })();
 
 // ── Language switcher ─────────────────────────────────────────
+document.getElementById('app-ver').textContent = 'demka v' + APP_VERSION;
 (function initLang(){ applyLang(); })();
 const langPopup = $('#lang-popup');
 $('#lang-btn').addEventListener('click', e => { e.stopPropagation(); langPopup.classList.toggle('show'); });
