@@ -1740,12 +1740,22 @@ function scheduleRebuild(){
   rebuildTimer = setTimeout(()=>{ doRebuild(); save(); editorPane.classList.remove('dirty'); saveLabel.textContent = STRINGS[lang].saveSaved; }, 280);
 }
 
+function promoteFirstAsRoot(root){
+  if (root.children.length <= 1) return;
+  const first = root.children[0];
+  const rest  = root.children.slice(1);
+  rest.forEach(n => { n.parent = first; });
+  first.children = [...first.children, ...rest];
+  root.children = [first];
+}
+
 function doRebuild(){
   computeCardSize();
   const src = editor.value;
   const { meta, content } = parseFrontMatter(src);
   state.footer = meta.footer || '';
   const root = parseMarkdown(content);
+  if (state.viewMode === 'map' || state.viewMode === 'logic') promoteFirstAsRoot(root);
   state.root = root;
   state.nodes = flatten(root);
   if (state.viewMode === 'map') layoutMap(root);
