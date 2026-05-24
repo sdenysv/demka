@@ -132,7 +132,7 @@ enum LayoutEngine {
     }
 
     // MARK: - Logic
-    /// Ports JS layoutLogic exactly.
+    /// Secondary H1s stack vertically below root instead of branching right.
     static func layoutLogic(_ root: RootNode) {
         let all = root.flatten()
         guard !all.isEmpty else {
@@ -142,10 +142,12 @@ enum LayoutEngine {
         for n in all { n.w = cardW; n.h = cardH }
 
         let HDIST: CGFloat = cardW * 0.9
+        let VDIST: CGFloat = vGap * 4
 
         func subH(_ n: Node) -> CGFloat {
-            if n.children.isEmpty { return cardH }
-            let total = n.children.reduce(CGFloat(0)) { $0 + subH($1) } + vGap * CGFloat(n.children.count - 1)
+            let kids = n.children.filter { $0.level != 1 }
+            if kids.isEmpty { return cardH }
+            let total = kids.reduce(CGFloat(0)) { $0 + subH($1) } + vGap * CGFloat(kids.count - 1)
             return max(cardH, total)
         }
 
@@ -153,21 +155,29 @@ enum LayoutEngine {
             n.depth = depth
             n.x = x
             n.y = centerY - cardH / 2
-            guard !n.children.isEmpty else { return }
-            let totalH = n.children.reduce(CGFloat(0)) { $0 + subH($1) } + vGap * CGFloat(n.children.count - 1)
+            let kids = n.children.filter { $0.level != 1 }
+            guard !kids.isEmpty else { return }
+            let totalH = kids.reduce(CGFloat(0)) { $0 + subH($1) } + vGap * CGFloat(kids.count - 1)
             var cy = centerY - totalH / 2
-            for c in n.children {
+            for c in kids {
                 let sh = subH(c)
                 place(c, x: x + cardW + HDIST, centerY: cy + sh / 2, depth: depth + 1)
                 cy += sh + vGap
             }
         }
 
+        let h1 = root.children[0]
+        let h1Kids = h1.children.filter { $0.level == 1 }
+
         var yOff: CGFloat = 0
-        for h1 in root.children {
-            let sh = subH(h1)
-            place(h1, x: 0, centerY: yOff + sh / 2, depth: 0)
-            yOff += sh + vGap * 2
+        let sh = subH(h1)
+        place(h1, x: 0, centerY: yOff + sh / 2, depth: 0)
+        yOff += sh + VDIST
+
+        for kid in h1Kids {
+            let kidSh = subH(kid)
+            place(kid, x: 0, centerY: yOff + kidSh / 2, depth: 1)
+            yOff += kidSh + VDIST
         }
 
         applyBounds(root)

@@ -111,18 +111,32 @@ struct ConnectorOverlay: View {
                 )
             }
         } else {
-            // Logic: left-to-right bezier
-            let py = parent.y + parent.h / 2
-            let px = parent.x + parent.w
-            let cy = child.y  + child.h / 2
-            let cx = child.x
-            let mx = (px + cx) / 2
-            path.move(to: CGPoint(x: px, y: py))
-            path.addCurve(
-                to: CGPoint(x: cx, y: cy),
-                control1: CGPoint(x: mx, y: py),
-                control2: CGPoint(x: mx, y: cy)
-            )
+            // Logic: left-to-right bezier, or vertical S-curve if child is in same column
+            let parentCx = parent.x + parent.w / 2
+            let childCx  = child.x  + child.w / 2
+            if abs(childCx - parentCx) < LayoutEngine.cardW * 0.2 {
+                let by = parent.y + parent.h
+                let ty = child.y
+                let midY = (by + ty) / 2
+                path.move(to: CGPoint(x: parentCx, y: by))
+                path.addCurve(
+                    to: CGPoint(x: childCx, y: ty),
+                    control1: CGPoint(x: parentCx, y: midY),
+                    control2: CGPoint(x: childCx, y: midY)
+                )
+            } else {
+                let py = parent.y + parent.h / 2
+                let px = parent.x + parent.w
+                let cy = child.y  + child.h / 2
+                let cx = child.x
+                let mx = (px + cx) / 2
+                path.move(to: CGPoint(x: px, y: py))
+                path.addCurve(
+                    to: CGPoint(x: cx, y: cy),
+                    control1: CGPoint(x: mx, y: py),
+                    control2: CGPoint(x: mx, y: cy)
+                )
+            }
         }
 
         ctx.stroke(path, with: .color(color), lineWidth: 1.5)
