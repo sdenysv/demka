@@ -92,6 +92,22 @@
   .editor-pane .ed-head .save-state{display:flex;align-items:center;gap:6px}
   .editor-pane .ed-head .save-state .pulse{width:6px;height:6px;background:var(--mute);border-radius:50%;display:inline-block;transition:background 240ms var(--ease)}
   .editor-pane.dirty .ed-head .save-state .pulse{background:var(--active)}
+  .ed-head-right{display:flex;align-items:center;gap:10px}
+  .tpl-wrap{position:relative}
+  .tpl-btn{appearance:none;border:1px solid var(--line);background:transparent;color:var(--mute);
+    font:600 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;
+    border-radius:3px;cursor:pointer;transition:color 120ms var(--ease),border-color 120ms var(--ease)}
+  .tpl-btn:hover{color:var(--ink);border-color:var(--ink2)}
+  .tpl-popup{position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);
+    border:1px solid var(--ink2);border-radius:6px;padding:6px;display:flex;flex-direction:column;
+    gap:2px;min-width:200px;z-index:300;opacity:0;pointer-events:none;transform:translateY(-4px);
+    transition:opacity 140ms var(--ease),transform 140ms var(--ease);box-shadow:0 4px 16px rgba(0,0,0,.12)}
+  .tpl-popup.show{opacity:1;pointer-events:auto;transform:none}
+  .tpl-opt{appearance:none;border:0;background:transparent;width:100%;font:500 13px/1.3 var(--font);
+    color:var(--ink);padding:8px 10px;border-radius:4px;cursor:pointer;text-align:left;
+    transition:background 100ms var(--ease)}
+  .tpl-opt:hover{background:var(--bg)}
+  .tpl-opt small{display:block;font-size:11px;color:var(--mute);margin-top:2px;font-weight:400}
   .editor-pane textarea{flex:1;border:0;background:transparent;resize:none;
     padding:8px 22px 24px;font:15px/1.6 var(--mono);color:var(--ink);outline:none;
     tab-size:2;caret-color:var(--ink)}
@@ -644,7 +660,13 @@
   <section class="editor-pane" id="editor-pane">
     <div class="ed-head">
       <span id="ed-head-label">editor · markdown</span>
-      <span class="save-state"><span class="pulse"></span><span id="save-label">saved</span></span>
+      <div class="ed-head-right">
+        <div class="tpl-wrap">
+          <button class="tpl-btn" id="tpl-btn" title="Insert template">Templates</button>
+          <div class="tpl-popup" id="tpl-popup"></div>
+        </div>
+        <span class="save-state"><span class="pulse"></span><span id="save-label">saved</span></span>
+      </div>
     </div>
     <textarea id="editor" spellcheck="false" autocapitalize="off" autocorrect="off" placeholder="# Start typing markdown…
 ## a section
@@ -2902,6 +2924,52 @@ $$('.lang-opt').forEach(btn => {
     applyLang();
   });
 });
+
+// ── Templates ────────────────────────────────────────────────
+const tplBtn   = $('#tpl-btn');
+const tplPopup = $('#tpl-popup');
+
+async function loadTemplates(){
+  const res = await fetch('assets/templates/index.json');
+  return res.json();
+}
+
+function openTplPopup(){
+  if (tplPopup.classList.contains('show')){ tplPopup.classList.remove('show'); return; }
+  if (!tplPopup.dataset.loaded){
+    tplPopup.innerHTML = '<button class="tpl-opt" disabled style="opacity:.5">Loading…</button>';
+    loadTemplates().then(list => {
+      tplPopup.innerHTML = list.map(t =>
+        `<button class="tpl-opt" data-file="${t.file}"><span>${t.name}</span><small>${t.description}</small></button>`
+      ).join('');
+      tplPopup.dataset.loaded = '1';
+      tplPopup.querySelectorAll('.tpl-opt').forEach(btn => btn.addEventListener('click', onTplSelect));
+    }).catch(() => {
+      tplPopup.innerHTML = '<button class="tpl-opt" disabled style="opacity:.5">Failed to load</button>';
+    });
+  }
+  tplPopup.classList.add('show');
+}
+
+async function onTplSelect(e){
+  const file = e.currentTarget.dataset.file;
+  tplPopup.classList.remove('show');
+  try {
+    const res = await fetch(`assets/templates/${file}`);
+    const text = await res.text();
+    const hasContent = editor.value.trim().length > 0;
+    if (hasContent && !confirm('Replace current content with this template?')) return;
+    editor.value = text;
+    save();
+    doRebuild();
+  } catch {
+    alert('Failed to load template.');
+  }
+}
+
+tplBtn.addEventListener('click', e => { e.stopPropagation(); openTplPopup(); });
+tplPopup.addEventListener('click', e => e.stopPropagation());
+document.addEventListener('click', () => tplPopup.classList.remove('show'));
 
 // ── Init ─────────────────────────────────────────────────────
 (async function init(){

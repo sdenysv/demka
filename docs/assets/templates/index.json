@@ -1,0 +1,14 @@
+[
+  {
+    "id": "4-mind-map",
+    "name": "Mind Map",
+    "description": "4 sub-topics with conclusion",
+    "file": "4-mind-map.md"
+  },
+  {
+    "id": "hackaton-pitch",
+    "name": "Hackathon Pitch",
+    "description": "Problem, solution, stage, call to action",
+    "file": "hackaton-pitch.md"
+  }
+]
