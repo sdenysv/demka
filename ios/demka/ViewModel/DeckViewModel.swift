@@ -6,6 +6,7 @@ private let kViewMode = "demka.viewMode"
 private let kTheme    = "demka.theme"
 private let kReveal   = "demka.reveal"
 private let kTimer    = "demka.timer"
+private let kCards    = "demka.cards"
 
 @MainActor
 final class DeckViewModel: ObservableObject {
@@ -30,6 +31,9 @@ final class DeckViewModel: ObservableObject {
     @Published var visitedIds: Set<String> = []
     @Published var revealEnabled: Bool {
         didSet { UserDefaults.standard.set(revealEnabled, forKey: kReveal) }
+    }
+    @Published var cardsVisible: Bool {
+        didSet { UserDefaults.standard.set(cardsVisible, forKey: kCards) }
     }
     @Published var timerEnabled: Bool {
         didSet {
@@ -61,6 +65,7 @@ final class DeckViewModel: ObservableObject {
         self.theme = Theme.all.first(where: { $0.name == themeName }) ?? .stone
 
         self.revealEnabled = UserDefaults.standard.object(forKey: kReveal) as? Bool ?? true
+        self.cardsVisible  = UserDefaults.standard.object(forKey: kCards) as? Bool ?? true
         self.timerEnabled  = UserDefaults.standard.object(forKey: kTimer) as? Bool ?? false
 
         rebuild()

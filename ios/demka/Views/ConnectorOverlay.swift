@@ -10,7 +10,7 @@ struct ConnectorOverlay: View {
 
             if vm.viewMode == .timeline {
                 drawTimeline(ctx: ctx, root: root, activeId: activeId)
-            } else {
+            } else if vm.cardsVisible {
                 for top in root.children {
                     walkConn(ctx: ctx, parent: nil, node: top, activeId: activeId)
                 }

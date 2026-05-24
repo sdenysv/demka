@@ -17,12 +17,14 @@ struct CardView: View {
     }
 
     private var borderColor: Color {
+        guard vm.cardsVisible else { return .clear }
         guard vm.isPresenting else { return vm.theme.line }
         if isActive  { return vm.theme.active }
         if isVisited { return vm.theme.visited }
         return vm.theme.line
     }
     private var bgColor: Color {
+        guard vm.cardsVisible else { return .clear }
         guard vm.isPresenting else { return vm.theme.surface }
         if isActive  { return vm.theme.surface }
         if isVisited { return vm.theme.bg }
