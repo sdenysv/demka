@@ -1,0 +1,14 @@
+[
+  {
+    "id": "4-mind-map",
+    "name": "Ментальна карта",
+    "description": "4 підтеми з висновком",
+    "file": "4-mind-map.md"
+  },
+  {
+    "id": "hackaton-pitch",
+    "name": "Хакатон-пітч",
+    "description": "Проблема, рішення, стан, заклик до дії",
+    "file": "hackaton-pitch.md"
+  }
+]

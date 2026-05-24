@@ -953,6 +953,10 @@ const STRINGS = {
     presentExit: 'Exit',
     editorHead: 'editor · markdown',
     templatesBtn: 'Templates',
+    tplModalTitle: 'Insert template',
+    tplModalBody: 'This will override your current markdown text. Save any changes before continuing.',
+    tplModalCancel: 'Cancel',
+    tplModalInsert: 'Insert',
     saveSaved: 'saved',
     saveEditing: 'editing…',
     emptyTitle: 'Start typing markdown in the editor.',
@@ -1045,6 +1049,10 @@ const STRINGS = {
     presentExit: 'Вийти',
     editorHead: 'редактор · markdown',
     templatesBtn: 'зразки',
+    tplModalTitle: 'Вставити зразок',
+    tplModalBody: 'Це замінить поточний markdown. Переконайтесь, що зберегли зміни перед тим, як продовжити.',
+    tplModalCancel: 'Скасувати',
+    tplModalInsert: 'Вставити',
     saveSaved: 'збережено',
     saveEditing: 'редагування…',
     emptyTitle: 'Почніть вводити markdown у редакторі.',
@@ -1140,6 +1148,10 @@ function applyLang(){
   document.querySelectorAll('.lang-opt').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
   document.getElementById('ed-head-label').textContent = s.editorHead;
   document.getElementById('tpl-btn').textContent = s.templatesBtn;
+  document.querySelector('.tpl-modal-card h3').textContent = s.tplModalTitle;
+  document.querySelector('.tpl-modal-card p').textContent  = s.tplModalBody;
+  document.getElementById('tpl-modal-cancel').textContent  = s.tplModalCancel;
+  document.getElementById('tpl-modal-confirm').textContent = s.tplModalInsert;
   if (!editorPane.classList.contains('dirty')) saveLabel.textContent = s.saveSaved;
   document.querySelector('.empty h3').textContent = s.emptyTitle;
   document.querySelector('.empty p').textContent = s.emptyDesc;
@@ -2971,6 +2983,7 @@ $$('.lang-opt').forEach(btn => {
     lang = btn.dataset.lang;
     langPopup.classList.remove('show');
     localStorage.setItem('demka.lang', lang);
+    delete tplPopup.dataset.loaded;
     if (editor.value.trim() === EXAMPLES[prev].trim()){
       editor.value = EXAMPLES[lang];
       localStorage.removeItem('demka.md');
@@ -2984,8 +2997,10 @@ $$('.lang-opt').forEach(btn => {
 const tplBtn   = $('#tpl-btn');
 const tplPopup = $('#tpl-popup');
 
+const TPL_DIR = { en: 'eng', uk: 'ukr' };
 async function loadTemplates(){
-  const res = await fetch('assets/templates/index.json');
+  const dir = TPL_DIR[lang] || 'eng';
+  const res = await fetch(`assets/templates/${dir}/index.json`);
   return res.json();
 }
 
@@ -3022,7 +3037,8 @@ async function onTplSelect(e){
   const file = e.currentTarget.dataset.file;
   tplPopup.classList.remove('show');
   try {
-    const res = await fetch(`assets/templates/${file}`);
+    const dir = TPL_DIR[lang] || 'eng';
+    const res = await fetch(`assets/templates/${dir}/${file}`);
     const text = await res.text();
     const hasContent = editor.value.trim().length > 0;
     if (hasContent) {
