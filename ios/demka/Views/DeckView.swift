@@ -235,9 +235,8 @@ struct DeckView: View {
                     .shadow(color: .black.opacity(0.12), radius: 6, x: 0, y: 2)
                 Circle()
                     .stroke(vm.theme.line, lineWidth: 1)
-                Text(vm.viewMode.symbol)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(vm.theme.ink)
+                ViewModeIcon(mode: vm.viewMode, color: vm.theme.ink)
+                    .frame(width: 22, height: 15)
             }
             .frame(width: 44, height: 44)
         }
@@ -560,6 +559,60 @@ struct ShareConfirmSheet: View {
                 .font(.system(size: 13, design: .monospaced))
                 .foregroundColor(vm.theme.ink)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+// MARK: - View mode icon
+
+struct ViewModeIcon: View {
+    let mode: ViewMode
+    let color: Color
+    var lineWidth: CGFloat = 1.5
+
+    var body: some View {
+        Canvas { ctx, size in
+            let sx = size.width / 20
+            let sy = size.height / 14
+
+            func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x*sx, y: y*sy) }
+            func box(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat) -> Path {
+                Path(CGRect(x: x*sx, y: y*sy, width: w*sx, height: h*sy))
+            }
+            func ln(_ x1: CGFloat, _ y1: CGFloat, _ x2: CGFloat, _ y2: CGFloat) -> Path {
+                Path { p in p.move(to: pt(x1, y1)); p.addLine(to: pt(x2, y2)) }
+            }
+
+            let s = GraphicsContext.Shading.color(color)
+
+            switch mode {
+            case .timeline:
+                ctx.stroke(box(1, 5.5, 4, 3),  with: s, lineWidth: lineWidth)
+                ctx.stroke(ln(5, 7, 8, 7),      with: s, lineWidth: lineWidth)
+                ctx.stroke(box(8, 5.5, 4, 3),   with: s, lineWidth: lineWidth)
+                ctx.stroke(ln(12, 7, 15, 7),     with: s, lineWidth: lineWidth)
+                ctx.stroke(box(15, 5.5, 4, 3),  with: s, lineWidth: lineWidth)
+
+            case .map:
+                ctx.stroke(box(8, 5.5, 4, 3),   with: s, lineWidth: lineWidth)
+                ctx.stroke(box(1, 1, 4, 3),     with: s, lineWidth: lineWidth)
+                ctx.stroke(box(1, 10, 4, 3),    with: s, lineWidth: lineWidth)
+                ctx.stroke(box(15, 1, 4, 3),    with: s, lineWidth: lineWidth)
+                ctx.stroke(box(15, 10, 4, 3),   with: s, lineWidth: lineWidth)
+                ctx.stroke(ln(8, 6.5, 5, 2.5),  with: s, lineWidth: lineWidth)
+                ctx.stroke(ln(8, 7.5, 5, 11.5), with: s, lineWidth: lineWidth)
+                ctx.stroke(ln(12, 6.5, 15, 2.5), with: s, lineWidth: lineWidth)
+                ctx.stroke(ln(12, 7.5, 15, 11.5),with: s, lineWidth: lineWidth)
+
+            case .logic:
+                ctx.stroke(box(1, 5.5, 4, 3),   with: s, lineWidth: lineWidth)
+                ctx.stroke(box(13, 2, 4, 3),    with: s, lineWidth: lineWidth)
+                ctx.stroke(box(13, 9, 4, 3),    with: s, lineWidth: lineWidth)
+                ctx.stroke(ln(5, 7, 9, 7),       with: s, lineWidth: lineWidth)
+                ctx.stroke(ln(9, 3.5, 9, 10.5),  with: s, lineWidth: lineWidth)
+                ctx.stroke(ln(9, 3.5, 13, 3.5),  with: s, lineWidth: lineWidth)
+                ctx.stroke(ln(9, 10.5, 13, 10.5),with: s, lineWidth: lineWidth)
+            }
         }
     }
 }

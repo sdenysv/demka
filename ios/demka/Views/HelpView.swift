@@ -49,11 +49,11 @@ struct HelpView: View {
                             .font(.system(size: 13, weight: .semibold, design: .monospaced))
                             .foregroundColor(vm.theme.mute)
 
-                        layoutRow(symbol: "→", name: "Timeline",
+                        layoutRow(.timeline, name: "Timeline",
                                   desc: "Horizontal spine with H1/H2 nodes; H3 hangs below")
-                        layoutRow(symbol: "×", name: "Map",
+                        layoutRow(.map, name: "Map",
                                   desc: "Mind-map: H1 center, H2s split left/right")
-                        layoutRow(symbol: "K", name: "Logic",
+                        layoutRow(.logic, name: "Logic",
                                   desc: "Left-to-right tree")
                     }
 
@@ -82,12 +82,10 @@ struct HelpView: View {
     }
 
     @ViewBuilder
-    private func layoutRow(symbol: String, name: String, desc: String) -> some View {
+    private func layoutRow(_ mode: ViewMode, name: String, desc: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            Text(symbol)
-                .font(.system(size: 16, weight: .bold, design: .monospaced))
-                .foregroundColor(vm.theme.active)
-                .frame(width: 20)
+            ViewModeIcon(mode: mode, color: vm.theme.active)
+                .frame(width: 24, height: 17)
             VStack(alignment: .leading, spacing: 2) {
                 Text(name)
                     .font(.system(size: 14, weight: .semibold))
