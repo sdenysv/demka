@@ -66,7 +66,7 @@ enum LayoutEngine {
     }
 
     // MARK: - Map
-    /// Ports JS layoutMap exactly.
+    /// Root H1 at centre, H2s split left/right, secondary H1s placed below root.
     static func layoutMap(_ root: RootNode) {
         let all = root.flatten()
         guard !all.isEmpty else {
@@ -77,11 +77,12 @@ enum LayoutEngine {
 
         let HDIST: CGFloat = cardW * 0.4
         let MVGAP: CGFloat = vGap * 0.5
+        let VDIST: CGFloat = HDIST * 2
 
         func placeCol(_ nodes: [Node], side: String, x: CGFloat, centerY: CGFloat, depth: Int) {
             guard !nodes.isEmpty else { return }
             let totalH = CGFloat(nodes.count) * cardH + CGFloat(nodes.count - 1) * MVGAP
-            let startY  = centerY - totalH / 2
+            let startY = centerY - totalH / 2
             for (i, n) in nodes.enumerated() {
                 n.x = x
                 n.y = startY + CGFloat(i) * (cardH + MVGAP)
@@ -95,35 +96,35 @@ enum LayoutEngine {
             }
         }
 
-        let h1s = root.children
+        let colHalf: ([Node]) -> CGFloat = { ns in
+            ns.isEmpty ? 0 : (CGFloat(ns.count) * cardH + CGFloat(ns.count - 1) * MVGAP) / 2
+        }
 
-        if h1s.count == 1 {
-            let h1 = h1s[0]
-            h1.x = -cardW / 2; h1.y = -cardH / 2; h1.depth = 0
+        let h1 = root.children[0]
+        h1.x = -cardW / 2; h1.y = -cardH / 2; h1.depth = 0
 
-            let h2s = h1.children
-            let rCount = Int(ceil(Double(h2s.count) / 2.0))
-            let rightNodes = Array(h2s.prefix(rCount))
-            let leftNodes  = Array(h2s.dropFirst(rCount))
+        let h2Kids = h1.children.filter { $0.level != 1 }
+        let h1Kids = h1.children.filter { $0.level == 1 }
 
-            placeCol(rightNodes, side: "right", x: cardW / 2 + HDIST,           centerY: 0, depth: 1)
-            placeCol(leftNodes,  side: "left",  x: -cardW / 2 - HDIST - cardW,  centerY: 0, depth: 1)
-        } else {
-            var yOff: CGFloat = 0
-            for h1 in h1s {
-                h1.x = -cardW / 2; h1.y = yOff - cardH / 2; h1.depth = 0
-                let cy = yOff
+        let rCount     = Int(ceil(Double(h2Kids.count) / 2.0))
+        let rightNodes = Array(h2Kids.prefix(rCount))
+        let leftNodes  = Array(h2Kids.dropFirst(rCount))
+        placeCol(rightNodes, side: "right", x: cardW / 2 + HDIST,          centerY: 0, depth: 1)
+        placeCol(leftNodes,  side: "left",  x: -cardW / 2 - HDIST - cardW, centerY: 0, depth: 1)
 
-                let h2s = h1.children
-                let rCount = Int(ceil(Double(h2s.count) / 2.0))
-                placeCol(Array(h2s.prefix(rCount)), side: "right", x: cardW / 2 + HDIST,          centerY: cy, depth: 1)
-                placeCol(Array(h2s.dropFirst(rCount)), side: "left",  x: -cardW / 2 - HDIST - cardW, centerY: cy, depth: 1)
+        if !h1Kids.isEmpty {
+            let h2Bottom = max(cardH / 2, colHalf(rightNodes), colHalf(leftNodes))
+            var yKid = h2Bottom + VDIST
 
-                let sideH: (String) -> CGFloat = { side in
-                    let ns = side == "right" ? Array(h2s.prefix(rCount)) : Array(h2s.dropFirst(rCount))
-                    return ns.isEmpty ? cardH : CGFloat(ns.count) * cardH + CGFloat(ns.count - 1) * MVGAP
-                }
-                yOff += max(cardH, sideH("right"), sideH("left")) + MVGAP * 3
+            for kid in h1Kids {
+                kid.x = -cardW / 2; kid.y = yKid; kid.depth = 1
+                let kidH2s  = kid.children
+                let kRCount = Int(ceil(Double(kidH2s.count) / 2.0))
+                let kidCY   = yKid + cardH / 2
+                placeCol(Array(kidH2s.prefix(kRCount)), side: "right", x: cardW / 2 + HDIST,          centerY: kidCY, depth: 2)
+                placeCol(Array(kidH2s.dropFirst(kRCount)), side: "left", x: -cardW / 2 - HDIST - cardW, centerY: kidCY, depth: 2)
+                let kidBottom = max(cardH / 2, colHalf(Array(kidH2s.prefix(kRCount))), colHalf(Array(kidH2s.dropFirst(kRCount))))
+                yKid += cardH / 2 + kidBottom + VDIST
             }
         }
 

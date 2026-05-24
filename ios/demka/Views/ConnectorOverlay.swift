@@ -83,18 +83,33 @@ struct ConnectorOverlay: View {
         var path = Path()
 
         if vm.viewMode == .map {
-            let py = parent.y + parent.h / 2
-            let cy = child.y  + child.h / 2
-            let childIsRight = (child.x + child.w / 2) > (parent.x + parent.w / 2)
-            let px: CGFloat = childIsRight ? parent.x + parent.w : parent.x
-            let cx: CGFloat = childIsRight ? child.x             : child.x + child.w
-            let mx = (px + cx) / 2
-            path.move(to: CGPoint(x: px, y: py))
-            path.addCurve(
-                to: CGPoint(x: cx, y: cy),
-                control1: CGPoint(x: mx, y: py),
-                control2: CGPoint(x: mx, y: cy)
-            )
+            let parentCx = parent.x + parent.w / 2
+            let childCx  = child.x  + child.w / 2
+            if abs(childCx - parentCx) < LayoutEngine.cardW * 0.2 {
+                // Child is vertically aligned — S-curve from parent bottom to child top
+                let by = parent.y + parent.h
+                let ty = child.y
+                let midY = (by + ty) / 2
+                path.move(to: CGPoint(x: parentCx, y: by))
+                path.addCurve(
+                    to: CGPoint(x: childCx, y: ty),
+                    control1: CGPoint(x: parentCx, y: midY),
+                    control2: CGPoint(x: childCx, y: midY)
+                )
+            } else {
+                let py = parent.y + parent.h / 2
+                let cy = child.y  + child.h / 2
+                let childIsRight = childCx > parentCx
+                let px: CGFloat = childIsRight ? parent.x + parent.w : parent.x
+                let cx: CGFloat = childIsRight ? child.x             : child.x + child.w
+                let mx = (px + cx) / 2
+                path.move(to: CGPoint(x: px, y: py))
+                path.addCurve(
+                    to: CGPoint(x: cx, y: cy),
+                    control1: CGPoint(x: mx, y: py),
+                    control2: CGPoint(x: mx, y: cy)
+                )
+            }
         } else {
             // Logic: left-to-right bezier
             let py = parent.y + parent.h / 2

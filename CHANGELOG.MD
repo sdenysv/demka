@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.12.0] - 2026-05-24
+
+### Added
+- Template picker in editor header: fetch and insert `.md` templates from `docs/assets/templates/`
+- `index.json` manifest for templates; initial templates: Mind Map, Hackathon Pitch
+- "Templates" button translates to "зразки" in Ukrainian
+
+### Changed
+- Map view: secondary H1 nodes (e.g. conclusion) now appear below the root with a vertical S-curve connector, instead of being split left/right with H2s
+- Logic view: same treatment — secondary H1s stack vertically below root instead of branching right
+- Hiding/showing the editor sidebar no longer triggers a camera zoom/pan
+
+---
+
 ## [2.11.0] - 2026-05-24
 
 ### Added

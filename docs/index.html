@@ -1355,21 +1355,22 @@ function layoutTimeline(root){
   applyBounds(root);
 }
 
-// Map: radial mind-map, H1s in a ring, H2s/H3s fan outward
+// Map: radial mind-map, root H1 at centre, H2s split left/right,
+// secondary H1s (other H1 headings) placed below root connected vertically.
 function layoutMap(root){
   const all = flatten(root);
   if (!all.length){ root.bounds={minX:0,minY:0,maxX:100,maxY:100,w:200,h:200,offX:0,offY:0}; return; }
   for (const n of all){ n.w=CARD_W; n.h=CARD_H; }
 
-  const HDIST  = CARD_W * 0.4;  // horizontal gap between levels (short connectors)
-  const MVGAP  = V_GAP  * 0.5;  // tighter vertical gap between sibling cards
+  const HDIST  = CARD_W * 0.4;
+  const MVGAP  = V_GAP  * 0.5;
+  const VDIST  = HDIST * 2; // vertical gap between root and bottom-branch H1s
 
-  // Place a column of nodes on one side, each level extending further out.
-  // centerY: the y-midpoint to center the column around.
+  // Place a column of nodes on one side; children extend one level further out.
   function placeCol(nodes, side, x, centerY, depth){
     if (!nodes.length) return;
     const totalH = nodes.length * CARD_H + (nodes.length - 1) * MVGAP;
-    const startY  = centerY - totalH / 2;
+    const startY = centerY - totalH / 2;
     nodes.forEach((n, i) => {
       n.x = x; n.y = startY + i * (CARD_H + MVGAP); n.depth = depth;
       if (n.children.length){
@@ -1379,57 +1380,60 @@ function layoutMap(root){
     });
   }
 
+  // Half-height of a column centred at some Y (= extent above/below centre).
+  const colHalf = ns => ns.length ? (ns.length * CARD_H + (ns.length - 1) * MVGAP) / 2 : 0;
+
   const h1s = root.children;
 
-  if (h1s.length === 1){
-    // Single centre node: split H2s left / right
-    const h1 = h1s[0];
-    h1.x = -CARD_W/2; h1.y = -CARD_H/2; h1.depth = 0;
+  // After promoteFirstAsRoot there is always exactly one root child.
+  // Its children may contain promoted secondary H1 nodes mixed with H2/H3s.
+  const h1 = h1s[0];
+  h1.x = -CARD_W/2; h1.y = -CARD_H/2; h1.depth = 0;
 
-    const h2s = h1.children;
-    const rCount = Math.ceil(h2s.length / 2);
-    const rightNodes = h2s.slice(0, rCount);
-    const leftNodes  = h2s.slice(rCount);
+  // Separate regular branch children from secondary H1s (go below root).
+  const h2Kids = h1.children.filter(c => c.type !== 'h1');
+  const h1Kids = h1.children.filter(c => c.type === 'h1');
 
-    placeCol(rightNodes, 'right', CARD_W/2 + HDIST,          0, 1);
-    placeCol(leftNodes,  'left',  -CARD_W/2 - HDIST - CARD_W, 0, 1);
+  const rCount     = Math.ceil(h2Kids.length / 2);
+  const rightNodes = h2Kids.slice(0, rCount);
+  const leftNodes  = h2Kids.slice(rCount);
+  placeCol(rightNodes, 'right', CARD_W/2 + HDIST,          0, 1);
+  placeCol(leftNodes,  'left',  -CARD_W/2 - HDIST - CARD_W, 0, 1);
 
-  } else {
-    // Multiple H1s: each acts as its own centre, stacked vertically,
-    // with its H2s split left / right.
-    let yOff = 0;
-    h1s.forEach(h1 => {
-      h1.x = -CARD_W/2; h1.y = yOff - CARD_H/2; h1.depth = 0;
-      const cy = yOff;
+  // Place secondary H1s below the root, each with its own left/right H2 split.
+  if (h1Kids.length){
+    const h2Bottom = Math.max(CARD_H / 2, colHalf(rightNodes), colHalf(leftNodes));
+    let yKid = h2Bottom + VDIST;
 
-      const h2s = h1.children;
-      const rCount = Math.ceil(h2s.length / 2);
-      placeCol(h2s.slice(0, rCount), 'right', CARD_W/2 + HDIST,          cy, 1);
-      placeCol(h2s.slice(rCount),    'left',  -CARD_W/2 - HDIST - CARD_W, cy, 1);
-
-      // Advance yOff: enough room for the tallest side
-      const sideH = side => {
-        const ns = side === 'right' ? h2s.slice(0, rCount) : h2s.slice(rCount);
-        return ns.length ? ns.length * CARD_H + (ns.length - 1) * MVGAP : CARD_H;
-      };
-      yOff += Math.max(CARD_H, sideH('right'), sideH('left')) + MVGAP * 3;
-    });
+    for (const kid of h1Kids){
+      kid.x = -CARD_W/2; kid.y = yKid; kid.depth = 1;
+      const kidH2s  = kid.children;
+      const kRCount = Math.ceil(kidH2s.length / 2);
+      const kidCY   = yKid + CARD_H / 2;
+      placeCol(kidH2s.slice(0, kRCount), 'right', CARD_W/2 + HDIST,          kidCY, 2);
+      placeCol(kidH2s.slice(kRCount),    'left',  -CARD_W/2 - HDIST - CARD_W, kidCY, 2);
+      const kidBottom = Math.max(CARD_H / 2, colHalf(kidH2s.slice(0, kRCount)), colHalf(kidH2s.slice(kRCount)));
+      yKid += CARD_H / 2 + kidBottom + VDIST;
+    }
   }
 
   applyBounds(root);
 }
 
-// Logic: top-down tree, parents centred over children
+// Logic: left-to-right tree; secondary H1s placed below root instead of branching right.
 function layoutLogic(root){
   const all = flatten(root);
   if (!all.length){ root.bounds={minX:0,minY:0,maxX:100,maxY:100,w:200,h:200,offX:0,offY:0}; return; }
   for (const n of all){ n.w=CARD_W; n.h=CARD_H; }
 
   const HDIST = CARD_W * 0.9;
+  const VDIST = V_GAP * 4; // vertical gap between stacked H1 blocks
 
+  // Height of a subtree, skipping secondary H1 children (they go below, not right).
   function subH(n){
-    if (!n.children.length) return CARD_H;
-    const total = n.children.reduce((s,c) => s+subH(c), 0) + V_GAP*(n.children.length-1);
+    const kids = n.children.filter(c => c.type !== 'h1');
+    if (!kids.length) return CARD_H;
+    const total = kids.reduce((s,c) => s+subH(c), 0) + V_GAP*(kids.length-1);
     return Math.max(CARD_H, total);
   }
 
@@ -1437,21 +1441,30 @@ function layoutLogic(root){
     n.depth = depth;
     n.x = x;
     n.y = centerY - CARD_H/2;
-    if (!n.children.length) return;
-    const totalH = n.children.reduce((s,c) => s+subH(c), 0) + V_GAP*(n.children.length-1);
+    const kids = n.children.filter(c => c.type !== 'h1');
+    if (!kids.length) return;
+    const totalH = kids.reduce((s,c) => s+subH(c), 0) + V_GAP*(kids.length-1);
     let cy = centerY - totalH/2;
-    for (const c of n.children){
+    for (const c of kids){
       const sh = subH(c);
       place(c, x + CARD_W + HDIST, cy + sh/2, depth+1);
       cy += sh + V_GAP;
     }
   }
 
+  // After promoteFirstAsRoot there is one root child; its h1-type children go below.
+  const h1 = root.children[0];
+  const h1Kids = h1.children.filter(c => c.type === 'h1');
+
   let yOff = 0;
-  for (const h1 of root.children){
-    const sh = subH(h1);
-    place(h1, 0, yOff + sh/2, 0);
-    yOff += sh + V_GAP*2;
+  const sh = subH(h1);
+  place(h1, 0, yOff + sh/2, 0);
+  yOff += sh + VDIST;
+
+  for (const kid of h1Kids){
+    const kidSh = subH(kid);
+    place(kid, 0, yOff + kidSh/2, 1);
+    yOff += kidSh + VDIST;
   }
 
   applyBounds(root);
@@ -1484,18 +1497,33 @@ function totalRevealSteps(n){
 function drawConn(parent, child){
   let d;
   if (state.viewMode === 'map'){
-    const py = parent.y + parent.h/2;
-    const cy = child.y  + child.h/2;
-    const childRight = child.x + child.w/2 > parent.x + parent.w/2;
-    const px = childRight ? parent.x + parent.w : parent.x;
-    const cx = childRight ? child.x             : child.x + child.w;
-    const mx = (px + cx) / 2;
-    d = `M ${px} ${py} C ${mx} ${py} ${mx} ${cy} ${cx} ${cy}`;
+    const parentCx = parent.x + parent.w/2;
+    const childCx  = child.x  + child.w/2;
+    if (Math.abs(childCx - parentCx) < CARD_W * 0.2){
+      // Child is vertically aligned — S-curve from parent bottom to child top
+      const by = parent.y + parent.h, ty = child.y, midY = (by + ty) / 2;
+      d = `M ${parentCx} ${by} C ${parentCx} ${midY} ${childCx} ${midY} ${childCx} ${ty}`;
+    } else {
+      const py = parent.y + parent.h/2;
+      const cy = child.y  + child.h/2;
+      const childRight = childCx > parentCx;
+      const px = childRight ? parent.x + parent.w : parent.x;
+      const cx = childRight ? child.x             : child.x + child.w;
+      const mx = (px + cx) / 2;
+      d = `M ${px} ${py} C ${mx} ${py} ${mx} ${cy} ${cx} ${cy}`;
+    }
   } else if (state.viewMode === 'logic'){
-    const py = parent.y + parent.h/2, px = parent.x + parent.w;
-    const cy = child.y  + child.h/2,  cx = child.x;
-    const mx = (px + cx) / 2;
-    d = `M ${px} ${py} C ${mx} ${py} ${mx} ${cy} ${cx} ${cy}`;
+    const parentCx = parent.x + parent.w/2;
+    const childCx  = child.x  + child.w/2;
+    if (Math.abs(childCx - parentCx) < CARD_W * 0.2){
+      const by = parent.y + parent.h, ty = child.y, midY = (by + ty) / 2;
+      d = `M ${parentCx} ${by} C ${parentCx} ${midY} ${childCx} ${midY} ${childCx} ${ty}`;
+    } else {
+      const py = parent.y + parent.h/2, px = parent.x + parent.w;
+      const cy = child.y  + child.h/2,  cx = child.x;
+      const mx = (px + cx) / 2;
+      d = `M ${px} ${py} C ${mx} ${py} ${mx} ${cy} ${cx} ${cy}`;
+    }
   } else {
     const sameRow = Math.abs(parent.y - child.y) < 4;
     if (sameRow){
@@ -1559,7 +1587,7 @@ function redrawConnectors(bounds){
   else for (const top of state.root.children) walkConn(top);
 }
 
-function refreshLayout(){
+function refreshLayout({ keepCam = false } = {}){
   if (!state.root || !state.nodes.length) return;
   computeCardSize();
   if (state.viewMode === 'map') layoutMap(state.root);
@@ -1575,7 +1603,9 @@ function refreshLayout(){
     n.el.style.width  = CARD_W + 'px';
     n.el.style.height = CARD_H + 'px';
   }
-  if (state.viewMode === 'timeline') fitTimeline(); else focusOnActive({ distance: 0 });
+  if (!keepCam){
+    if (state.viewMode === 'timeline') fitTimeline(); else focusOnActive({ distance: 0 });
+  }
 }
 
 function renderNodes(){
@@ -1907,7 +1937,7 @@ function updateNavButtons(){
 }
 
 // ── Persistence ──────────────────────────────────────────────
-const APP_VERSION = '2.11.0';
+const APP_VERSION = '2.12.0';
 const STORAGE_KEY = 'demka.md';
 const IMG_KEY_PREFIX = 'demka.img.';
 
@@ -2843,7 +2873,7 @@ function toggleEditor(){
   const start = performance.now();
   world.style.transition = 'none'; // suppress camera CSS transition during rAF loop
   function tick(now){
-    refreshLayout();
+    refreshLayout({ keepCam: true });
     if (now - start < DURATION){
       requestAnimationFrame(tick);
     } else {
