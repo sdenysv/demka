@@ -61,11 +61,8 @@ struct CardView: View {
         .frame(width: node.w, height: node.h)
         .scaleEffect(vm.isPresenting && isActive ? 1.02 : 1.0, anchor: .center)
         .animation(.easeInOut(duration: 0.18), value: isActive)
-        .onTapGesture {
-            if !vm.isPresenting {
-                vm.activateNode(node)
-            }
-        }
+        .onTapGesture { vm.activateNode(node) }
+        .allowsHitTesting(!vm.isPresenting)
     }
 
     @ViewBuilder

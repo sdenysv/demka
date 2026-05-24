@@ -442,40 +442,10 @@ struct DeckView: View {
         .background(vm.theme.bg.opacity(0.95))
     }
 
-    // MARK: - Presentation gesture layer
+    // MARK: - Presentation overlay (xmark only — gestures handled by panGesture)
     private var presentationGestureLayer: some View {
         Color.clear
-            .contentShape(Rectangle())
             .ignoresSafeArea()
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onEnded { value in
-                        let dx = value.translation.width
-                        let dy = value.translation.height
-                        let dist = hypot(dx, dy)
-
-                        if dist < 12 {
-                            // Tap: left half → back, right half → forward
-                            if value.startLocation.x < vm.viewportSize.width / 2 {
-                                vm.goBack()
-                            } else {
-                                vm.advance()
-                            }
-                        } else if abs(dy) > abs(dx) && abs(dy) > 60 {
-                            // Swipe up or down → exit
-                            withAnimation(.easeInOut(duration: 0.32)) {
-                                vm.isPresenting = false
-                                vm.fitAll()
-                            }
-                        } else if dx < -40 {
-                            // Swipe left → next card
-                            vm.jumpForward()
-                        } else if dx > 40 {
-                            // Swipe right → prev card
-                            vm.jumpBack()
-                        }
-                    }
-            )
             .overlay(alignment: .topTrailing) {
                 Button {
                     withAnimation(.easeInOut(duration: 0.32)) {
@@ -497,7 +467,7 @@ struct DeckView: View {
     private var panGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
-                if vm.isPresenting { return }
+                guard !vm.isPresenting else { return }
                 // Sync start offset at the beginning of each gesture so
                 // programmatic camera moves (focusCamera, fitAll) don't cause a jump.
                 if value.translation == .zero {
@@ -509,22 +479,51 @@ struct DeckView: View {
                 )
             }
             .onEnded { value in
-                if vm.isPresenting { return }
-                let target = CGSize(
-                    width:  dragStartOffset.width  + value.predictedEndTranslation.width,
-                    height: dragStartOffset.height + value.predictedEndTranslation.height
-                )
-                withAnimation(.interactiveSpring(response: 0.38, dampingFraction: 0.82)) {
-                    vm.camOffset = target
+                let dx = value.translation.width
+                let dy = value.translation.height
+                let dist = hypot(dx, dy)
+
+                if vm.isPresenting {
+                    if dist < 12 {
+                        // Tap: left half → back, right half → forward
+                        if value.startLocation.x < vm.viewportSize.width / 2 {
+                            vm.goBack()
+                        } else {
+                            vm.advance()
+                        }
+                    } else if abs(dy) > abs(dx) && abs(dy) > 60 {
+                        // Vertical swipe → exit
+                        withAnimation(.easeInOut(duration: 0.32)) {
+                            vm.isPresenting = false
+                            vm.fitAll()
+                        }
+                    } else {
+                        let predDist = hypot(value.predictedEndTranslation.width,
+                                            value.predictedEndTranslation.height)
+                        let isFastSwipe = dist > 0 && predDist / dist > 2.5
+                        if isFastSwipe && dx < -40 {
+                            vm.jumpForward()
+                        } else if isFastSwipe && dx > 40 {
+                            vm.jumpBack()
+                        }
+                        // slow drag during presentation → ignore
+                    }
+                } else {
+                    let target = CGSize(
+                        width:  dragStartOffset.width  + value.predictedEndTranslation.width,
+                        height: dragStartOffset.height + value.predictedEndTranslation.height
+                    )
+                    withAnimation(.interactiveSpring(response: 0.38, dampingFraction: 0.82)) {
+                        vm.camOffset = target
+                    }
+                    dragStartOffset = target
                 }
-                dragStartOffset = target
             }
     }
 
     private var pinchGesture: some Gesture {
         MagnifyGesture()
             .onChanged { value in
-                if vm.isPresenting { return }
                 // Capture start state on first event of each gesture
                 if !isPinching {
                     isPinching = true
@@ -541,7 +540,6 @@ struct DeckView: View {
                 vm.camScale = newScale
             }
             .onEnded { _ in
-                if vm.isPresenting { return }
                 isPinching = false
                 pinchStartScale = vm.camScale
                 pinchStartOffset = vm.camOffset
