@@ -242,7 +242,6 @@ struct DeckView: View {
                     .stroke(vm.theme.line, lineWidth: 1)
                 Circle()
                     .fill(vm.theme.active)
-                    .frame(width: 16, height: 16)
             }
             .frame(width: 44, height: 44)
         }
