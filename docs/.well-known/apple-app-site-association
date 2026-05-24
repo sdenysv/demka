@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["RPM25W5FP9.ua.demka.app"],
+        "components": [
+          {
+            "#": "share:*",
+            "comment": "Match all share fragment links"
+          }
+        ]
+      }
+    ]
+  }
+}
