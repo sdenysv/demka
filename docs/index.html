@@ -483,6 +483,23 @@
     .editor-pane{width:46%;min-width:240px}
   }
 
+  /* ── Medium screens (half-laptop) ───────────────────────── */
+  @media (max-width:960px){
+    .topbar{gap:6px;padding:0 10px 0 14px}
+    .logo small{display:none}
+    .topbar .meta{display:none}
+    .toggle-label{display:none}
+    .btn{font-size:12px;padding:6px 10px}
+    #remote-btn{display:none}
+  }
+  @media (max-width:800px){
+    .topbar{gap:4px;padding:0 8px 0 12px}
+    #record-btn{display:none}
+    #help-btn{display:none}
+    #present-btn kbd{display:none}
+    .btn{font-size:12px;padding:5px 8px}
+  }
+
   /* ── Mobile responsive layout ───────────────────────────── */
   @media (max-width:640px){
     /* Topbar: auto height, wraps to as many rows as needed */
