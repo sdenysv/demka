@@ -63,8 +63,13 @@ struct DeckView: View {
             if !vm.isPresenting {
                 fitAllButton
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                viewModeButton
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                VStack(spacing: 12) {
+                    colorPickerButton
+                    viewModeButton
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                .padding(.leading, 20)
+                .padding(.bottom, 24)
             }
 
             // Timer (top-left) + counter (top-right) on one line
@@ -224,6 +229,30 @@ struct DeckView: View {
         }
     }
 
+    // MARK: - Color picker button
+    private var colorPickerButton: some View {
+        Button {
+            showThemePicker = true
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(vm.theme.surface)
+                    .shadow(color: .black.opacity(0.12), radius: 6, x: 0, y: 2)
+                Circle()
+                    .stroke(vm.theme.line, lineWidth: 1)
+                Circle()
+                    .fill(vm.theme.active)
+                    .frame(width: 16, height: 16)
+            }
+            .frame(width: 44, height: 44)
+        }
+        .confirmationDialog("Theme", isPresented: $showThemePicker) {
+            ForEach(Theme.all) { t in
+                Button(t.name) { vm.theme = t }
+            }
+        }
+    }
+
     // MARK: - View mode button
     private var viewModeButton: some View {
         Button {
@@ -248,8 +277,6 @@ struct DeckView: View {
                 }
             }
         }
-        .padding(.leading, 20)
-        .padding(.bottom, 24)
     }
 
     // MARK: - Fit-all button
@@ -295,27 +322,9 @@ struct DeckView: View {
 
             Spacer()
 
-            // ── Centre: Reveal · Color · Timer ───────────────
+            // ── Centre: Reveal · Timer ───────────────────────
             HStack(spacing: 20) {
-                // Reveal
                 revealToggle
-
-                // Color picker
-                Button {
-                    showThemePicker = true
-                } label: {
-                    Circle()
-                        .fill(vm.theme.surface)
-                        .frame(width: 20, height: 20)
-                        .overlay(Circle().stroke(vm.theme.active, lineWidth: 2))
-                }
-                .confirmationDialog("Theme", isPresented: $showThemePicker) {
-                    ForEach(Theme.all) { t in
-                        Button(t.name) { vm.theme = t }
-                    }
-                }
-
-                // Timer
                 timerToggle
             }
 
