@@ -175,8 +175,6 @@
   .node li::before{content:"";flex-shrink:0;width:8px;height:1.5px;background:currentColor;opacity:.5;margin-top:calc(0.75em - 0.75px)}
   .node li[data-num]{align-items:baseline}
   .node li[data-num]::before{content:attr(data-num) ".";width:auto;height:auto;background:none;font-size:.85em;font-weight:600;opacity:.6;letter-spacing:-.01em;margin-top:0}
-  .node li > span{flex:1;min-width:0}
-  .node li ul{margin:6px 0 0;margin-left:18px;gap:4px}
   .node code{font-family:var(--mono);font-size:.88em;background:var(--bg);padding:1px 5px;border-radius:3px;color:var(--ink)}
   .node strong{font-weight:700;color:inherit}
   .node em{font-style:italic;color:inherit}
@@ -1693,7 +1691,7 @@ function nodeBody(n){
   const tag_ = tag;
   let textHtml = `<${tag_}>${inlineMd(n.text)}</${tag_}>`;
   if (n.lede) textHtml += `<p class="lede">${inlineMd(n.lede)}</p>`;
-  if (n.bullets.length) textHtml += '<ul>' + n.bullets.map(renderBullet).join('') + '</ul>';
+  if (n.bullets.length) textHtml += renderBullets(n.bullets);
   if (n.code) textHtml += `<pre>${n.code.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre>`;
   if (state.footer) textHtml += `<p class="node-footer">${esc(state.footer)}</p>`;
 
@@ -1708,10 +1706,16 @@ function nodeBody(n){
   }).join('');
   return `<div class="node-text">${textHtml}</div><div class="node-imgs node-imgs-${cols}">${imgHtml}</div>`;
 }
-function renderBullet(b){
-  let inner = inlineMd(b.text);
-  if (b.children?.length) inner += '<ul>' + b.children.map(renderBullet).join('') + '</ul>';
-  return `<li${b.num != null ? ` data-num="${b.num}"` : ''}><span>${inner}</span></li>`;
+function renderBullets(bullets){
+  const items = [];
+  function walk(b, depth){
+    items.push({ b, depth });
+    for (const child of (b.children || [])) walk(child, depth + 1);
+  }
+  for (const b of bullets) walk(b, 0);
+  return '<ul>' + items.map(({ b, depth }) =>
+    `<li${b.num != null ? ` data-num="${b.num}"` : ''}${depth ? ` style="margin-left:${depth * 18}px"` : ''}>${inlineMd(b.text)}</li>`
+  ).join('') + '</ul>';
 }
 
 function updateActive(){
