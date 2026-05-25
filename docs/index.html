@@ -164,19 +164,19 @@
   .node .lede{margin:10px 0 0;font-size:var(--nfs-body,16px);color:var(--ink2);line-height:1.5;max-width:38ch}
   .node.active .lede{color:var(--ink)}
   .node ul{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
-  .node li{font-size:var(--nfs-body,16px);line-height:1.5;padding:2px 0;display:flex;align-items:flex-start;gap:10px;color:inherit;
-    transition:opacity var(--t-bullet) ease-out, transform var(--t-bullet) ease-out}
+  .node li{font-size:var(--nfs-body,16px);line-height:1.5;padding:2px 0;display:flex;align-items:flex-start;gap:10px;color:inherit}
   /* progressive reveal in presentation mode only */
-  body.present .node.active .lede{opacity:0;transform:translateY(6px);
+  body.present .node.active .lede{opacity:0;transform:translateY(6px)}
+  body.present .node.active .lede.shown{opacity:1;transform:translateY(0);
     transition:opacity var(--t-bullet) ease-out, transform var(--t-bullet) ease-out}
-  body.present .node.active .lede.shown{opacity:1;transform:translateY(0)}
   body.present .node.active li{opacity:0;transform:translateY(6px)}
-  body.present .node.active li.shown{opacity:1;transform:translateY(0)}
+  body.present .node.active li.shown{opacity:1;transform:translateY(0);
+    transition:opacity var(--t-bullet) ease-out, transform var(--t-bullet) ease-out}
   .node li::before{content:"";flex-shrink:0;width:8px;height:1.5px;background:currentColor;opacity:.5;margin-top:calc(0.75em - 0.75px)}
   .node li[data-num]{align-items:baseline}
   .node li[data-num]::before{content:attr(data-num) ".";width:auto;height:auto;background:none;font-size:.85em;font-weight:600;opacity:.6;letter-spacing:-.01em;margin-top:0}
-  .node li ul{margin:6px 0 0 10px;gap:4px}
-  .node li li{font-size:calc(var(--nfs-body,16px) * 0.9);color:var(--ink2)}
+  .node li > span{flex:1;min-width:0}
+  .node li ul{margin:6px 0 0;margin-left:18px;gap:4px}
   .node code{font-family:var(--mono);font-size:.88em;background:var(--bg);padding:1px 5px;border-radius:3px;color:var(--ink)}
   .node strong{font-weight:700;color:inherit}
   .node em{font-style:italic;color:inherit}
@@ -1709,9 +1709,9 @@ function nodeBody(n){
   return `<div class="node-text">${textHtml}</div><div class="node-imgs node-imgs-${cols}">${imgHtml}</div>`;
 }
 function renderBullet(b){
-  let html = `<li${b.num != null ? ` data-num="${b.num}"` : ''}>${inlineMd(b.text)}`;
-  if (b.children?.length) html += '<ul>' + b.children.map(renderBullet).join('') + '</ul>';
-  return html + '</li>';
+  let inner = inlineMd(b.text);
+  if (b.children?.length) inner += '<ul>' + b.children.map(renderBullet).join('') + '</ul>';
+  return `<li${b.num != null ? ` data-num="${b.num}"` : ''}><span>${inner}</span></li>`;
 }
 
 function updateActive(){
