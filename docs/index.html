@@ -191,7 +191,7 @@
   .node-text{flex:1;min-width:0;padding:var(--node-pad-v,22px) var(--node-pad-h,26px);
     display:flex;flex-direction:column;overflow:hidden}
   .node.node-split .node-footer{margin-top:auto;padding-top:10px;border-top:1px solid var(--line)}
-  .node.node-split .node-imgs{flex:0 0 45%;min-width:0;display:grid;gap:3px;overflow:hidden;border-radius:0 7px 7px 0}
+  .node.node-split .node-imgs{flex:0 0 45%;min-width:0;display:grid;gap:3px;overflow:hidden;padding:var(--node-pad-v,22px) var(--node-pad-h,26px) var(--node-pad-v,22px) 0}
   /* image-only: normal padding, heading at top, image grid below */
   .node.node-img-only{flex-direction:column}
   .node.node-img-only .node-imgs{flex:1;min-height:0;display:grid;gap:4px;overflow:hidden;margin-top:10px;grid-auto-rows:1fr;align-content:stretch}
@@ -199,8 +199,8 @@
   .node-imgs.node-imgs-1{grid-template-columns:1fr}
   .node-imgs.node-imgs-2{grid-template-columns:1fr 1fr}
   .node-imgs.node-imgs-3{grid-template-columns:repeat(3,1fr)}
-  /* split: images cover their cell; image-only: contain + center */
-  .node-split .node-imgs img{width:100%;height:100%;object-fit:cover;display:block;-webkit-user-drag:none;user-select:none}
+  /* split: images fit their cell; image-only: contain + center */
+  .node-split .node-imgs img{width:100%;height:100%;object-fit:contain;object-position:top center;display:block;-webkit-user-drag:none;user-select:none}
   .node-img-only .node-imgs img{width:100%;height:100%;min-height:0;min-width:0;object-fit:contain;object-position:center;display:block;-webkit-user-drag:none;user-select:none}
   /* multi-image grids: equal rows */
   .node-imgs.node-imgs-2,.node-imgs.node-imgs-3{grid-auto-rows:1fr}
@@ -500,8 +500,8 @@
     /* image layouts in print */
     .print-page.node-split{flex-direction:row;padding:0}
     .print-page.node-split .node-text{flex:1;padding:64px 80px}
-    .print-page.node-split .node-imgs{flex:0 0 45%;display:grid;gap:3px}
-    .print-page.node-split .node-imgs img{width:100%;height:100%;object-fit:cover}
+    .print-page.node-split .node-imgs{flex:0 0 45%;display:grid;gap:3px;padding:64px 80px 64px 0}
+    .print-page.node-split .node-imgs img{width:100%;height:100%;object-fit:contain;object-position:top center}
     .print-page.node-img-only .node-imgs{flex:1;min-height:0;display:grid;gap:4px;margin-top:10px}
     .print-page.node-img-only .node-imgs img{width:100%;height:100%;object-fit:contain;object-position:center}
     .print-page .node-imgs.node-imgs-1{grid-template-columns:1fr}
