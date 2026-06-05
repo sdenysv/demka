@@ -1,24 +1,19 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Presentation shares — App Check required to write
     match /shares/{id} {
       allow read: if true;
-      allow write: if request.app.verified;
+      allow create: if request.resource.data.md is string
+                    && request.resource.data.md.size() < 500000;
+      allow update: if request.resource.data.md is string
+                    && request.resource.data.md.size() < 500000
+                    && request.resource.data.imgs.size() < 50;
+      allow delete: if false;
     }
 
-    // iOS remote sessions — iOS app creates, web app updates cmd field
-    match /remotes/{id} {
+    match /clicker/{id} {
       allow read: if true;
       allow write: if true;
     }
-
-    // WebRTC clicker signalling — App Check required to write, anyone can read
-    match /clicker/{id} {
-      allow read: if true;
-      allow write: if request.app.verified;
-    }
-
   }
 }
