@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.16.0] - 2026-06-05
+
+### Added
+- iOS clicker phone mode: opening `?iosremote=<id>` in a browser activates the phone remote UI (← / →) and relays commands to the iOS app via Firestore
+
+### Changed
+- Share confirmation dialog now includes a "Do not share sensitive or confidential data" warning (English and Ukrainian)
+
+---
+
 ## [2.15.0] - 2026-06-05
 
 ### Added

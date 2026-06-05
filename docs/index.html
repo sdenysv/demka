@@ -1040,7 +1040,7 @@ const STRINGS = {
     shareLink: 'Link',
     shareDownloadLabel: 'Download',
     shareInfoTitle: 'Share demka',
-    shareInfoDesc: ['Your demka will be saved to the cloud.', 'Anyone with the link can view it — no account needed.', 'Link is stored for 1 month.'],
+    shareInfoDesc: ['Your demka will be saved to the cloud.', 'Anyone with the link can view it — no account needed.', 'Link is stored for 1 month.', 'Do not share sensitive or confidential data.'],
     shareCancel: 'Cancel',
     shareConfirm: 'Create link',
     shareLoadingTitle: 'Creating link…',
@@ -1138,7 +1138,7 @@ const STRINGS = {
     shareLink: 'Покликання',
     shareDownloadLabel: 'Завантажити',
     shareInfoTitle: 'Поділитись демкою',
-    shareInfoDesc: ['Вашу демку буде збережено в хмарі.', 'Переглянути може кожен за покликанням — акаунт не потрібен.', 'Покликання зберігається 1 місяць.'],
+    shareInfoDesc: ['Вашу демку буде збережено в хмарі.', 'Переглянути може кожен за покликанням — акаунт не потрібен.', 'Покликання зберігається 1 місяць.', 'Не діліться конфіденційними даними.'],
     shareCancel: 'Скасувати',
     shareConfirm: 'Створити покликання',
     shareLoadingTitle: 'Створення покликання…',
@@ -2012,7 +2012,7 @@ function updateNavButtons(){
 }
 
 // ── Persistence ──────────────────────────────────────────────
-const APP_VERSION = '2.15.0';
+const APP_VERSION = '2.16.0';
 const STORAGE_KEY = 'demka.md';
 const IMG_KEY_PREFIX = 'demka.img.';
 
@@ -2449,6 +2449,30 @@ window.addEventListener('beforeunload', () => { if (remotePeer) remotePeer.destr
     });
     peer.on('error', err => { $('#phone-status-text').textContent = 'Error: ' + err.type; });
   });
+})();
+
+// ── iOS clicker phone mode ────────────────────────────────────
+(function checkIosRemoteMode(){
+  const id = new URLSearchParams(location.search).get('iosremote');
+  if (!id) return;
+  const BASE = 'https://firestore.googleapis.com/v1/projects/demka-944f1/databases/(default)/documents';
+  const KEY  = 'AIzaSyBMQMTFQwWaqDcId-knFXw0Fh5VQCqQo3k';
+
+  async function sendCmd(cmd){
+    await fetch(`${BASE}/remotes/${id}?updateMask.fieldPaths=cmd&key=${KEY}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({fields:{cmd:{stringValue:cmd}}})
+    });
+  }
+
+  document.body.classList.add('phone-mode');
+  $('#phone-retry').style.display = 'none';
+  $('#phone-dot').classList.add('on');
+  $('#phone-status-text').textContent = STRINGS[lang].phoneConnected || 'Connected';
+  $('#phone-prev').addEventListener('click', () => sendCmd('prev'));
+  $('#phone-next').addEventListener('click', () => sendCmd('next'));
+  sendCmd('connected');
 })();
 
 // ── Export ────────────────────────────────────────────────────
