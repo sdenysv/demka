@@ -2453,28 +2453,34 @@ async function fsWrite(code, fields){
   const body = { fields: Object.fromEntries(
     Object.entries(fields).map(([k,v]) => [k, { stringValue: String(v) }])
   )};
-  await fetch(`${FS_BASE}/clicker-sessions/${code}?key=${FS_KEY}`, {
+  const r = await fetch(`${FS_BASE}/remotes/wc-${code}?key=${FS_KEY}`, {
     method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
   });
+  if (!r.ok) throw new Error('Firestore write failed: ' + r.status);
 }
 async function fsRead(code){
-  const r = await fetch(`${FS_BASE}/clicker-sessions/${code}?key=${FS_KEY}`);
+  const r = await fetch(`${FS_BASE}/remotes/wc-${code}?key=${FS_KEY}`);
   if (!r.ok) return null;
   const doc = await r.json();
   if (!doc.fields) return null;
   return Object.fromEntries(Object.entries(doc.fields).map(([k,v]) => [k, v.stringValue || '']));
 }
 async function fsDelete(code){
-  await fetch(`${FS_BASE}/clicker-sessions/${code}?key=${FS_KEY}`, { method: 'DELETE' }).catch(()=>{});
+  await fetch(`${FS_BASE}/remotes/wc-${code}?key=${FS_KEY}`, { method: 'DELETE' }).catch(()=>{});
 }
 
 async function gatherIce(pc){
   if (pc.iceGatheringState === 'complete') return;
   await new Promise(resolve => {
     const t = setTimeout(resolve, 8000);
-    pc.onicegatheringstatechange = () => {
-      if (pc.iceGatheringState === 'complete'){ clearTimeout(t); resolve(); }
-    };
+    function handler(){
+      if (pc.iceGatheringState === 'complete'){
+        clearTimeout(t);
+        pc.removeEventListener('icegatheringstatechange', handler);
+        resolve();
+      }
+    }
+    pc.addEventListener('icegatheringstatechange', handler);
   });
 }
 
@@ -2550,6 +2556,10 @@ async function openRemoteModal(){
   }
   if (_hostPC) return; // already running
 
+  remoteStatusKey = 'remoteConnecting';
+  $('#remote-status-text').textContent = 'Preparing…';
+  $('#remote-qr').innerHTML = '';
+
   const code = remoteUID();
   const pc = new RTCPeerConnection(ICE_CFG);
   _hostPC = pc;
@@ -2566,15 +2576,23 @@ async function openRemoteModal(){
     if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') remoteMarkDisconnected();
   };
 
-  const offer = await pc.createOffer();
-  await pc.setLocalDescription(offer);
-  await gatherIce(pc);
-
-  await fsWrite(code, { offer: pc.localDescription.sdp });
+  try {
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await gatherIce(pc);
+    await fsWrite(code, { offer: pc.localDescription.sdp });
+  } catch(e) {
+    _hostPC = null;
+    pc.close();
+    $('#remote-status-text').textContent = 'Error: ' + e.message;
+    return;
+  }
 
   const url = location.origin + location.pathname + '?clicker=' + code;
   $('#remote-qr').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(url)}&size=160x160&margin=4" alt="QR">`;
   $('#remote-code').textContent = code;
+  remoteStatusKey = 'remoteWaiting';
+  $('#remote-status-text').textContent = 'Waiting for phone…';
 
   // Poll for answer
   _hostPollTimer = setInterval(async () => {
@@ -2607,6 +2625,7 @@ window.addEventListener('beforeunload', () => { clearInterval(_hostPollTimer); i
   document.body.classList.add('phone-mode');
 
   let currentChannel = null;
+  let _phonePC = null; // keep reference so iOS Safari doesn't GC the connection
   function sendCmd(cmd){ if (currentChannel?.readyState === 'open') currentChannel.send(cmd); }
 
   // Wire buttons (safe to do early — sendCmd guards readyState)
@@ -2669,11 +2688,14 @@ window.addEventListener('beforeunload', () => { clearInterval(_hostPollTimer); i
   async function joinWithCode(code){
     setStatus(STRINGS[lang].phoneConnecting);
     $('#phone-retry').classList.remove('show');
+    if (_phonePC){ try { _phonePC.close(); } catch(e){} _phonePC = null; }
     try {
       const doc = await fsRead(code);
-      if (!doc?.offer){ setStatus('Code not found'); $('#phone-retry').classList.add('show'); return; }
+      if (!doc?.offer){ setStatus('Code not found — check code or refresh presenter'); $('#phone-retry').classList.add('show'); return; }
 
+      setStatus('Negotiating…');
       const pc = new RTCPeerConnection(ICE_CFG);
+      _phonePC = pc;
       pc.ondatachannel = e => {
         const ch = e.channel;
         ch.onopen = () => { currentChannel = ch; markConnected(); };
@@ -2693,8 +2715,11 @@ window.addEventListener('beforeunload', () => { clearInterval(_hostPollTimer); i
       await pc.setRemoteDescription({ type: 'offer', sdp: doc.offer });
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
+      setStatus('Gathering candidates…');
       await gatherIce(pc);
+      setStatus('Sending answer…');
       await fsWrite(code, { offer: doc.offer, answer: pc.localDescription.sdp });
+      setStatus('Waiting for presenter…');
     } catch(e){
       setStatus('Error: ' + e.message);
       $('#phone-retry').classList.add('show');
