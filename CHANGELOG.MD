@@ -10,7 +10,6 @@
 - iOS clicker: "Disconnected" status when connection drops from presenter side; tapping phone icon after disconnect opens Clicker popup for a fresh session
 
 ### Changed
-- Renamed `docs/` folder to `web/`
 - iOS clicker landscape layout: nav buttons moved to bottom-left / bottom-right corners; notes area fills the space between
 - iOS clicker: returning to View screen via ← View always lands on deck view (not editor)
 
