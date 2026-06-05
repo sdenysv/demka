@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.17.1] - 2026-06-05
+
+### Fixed
+- Web clicker: counter (slide/bullet) no longer jumps to the left when the timer is hidden — it stays right-aligned at all times
+- Web clicker: pressing Present from the phone clicker now shows a "Click to enter fullscreen" overlay on the presenter's screen, working around the browser restriction that blocks `requestFullscreen()` from non-user-gesture events
+- Web clicker: phone lock/unlock no longer shows an unrecoverable "Error: network" — the peer is automatically recreated and reconnects; Retry button shown only for truly unrecoverable errors
+- Web clicker: presenter correctly shows disconnected status when the clicker goes silent, using a 12-second heartbeat stale timer rather than relying solely on the WebRTC close event
+- Web clicker: initial connection timeout increased from 5 s to 15 s to accommodate slower WebRTC ICE negotiation
+
+---
+
 ## [2.17.0] - 2026-06-05
 
 ### Added
