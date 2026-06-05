@@ -287,6 +287,11 @@
     letter-spacing:.08em;text-transform:uppercase;padding:8px 14px;border-radius:3px;
     z-index:100;opacity:0;pointer-events:none;transition:opacity 200ms var(--ease)}
   .present-hint.show{opacity:.9}
+  .fs-prompt{position:fixed;inset:0;z-index:150;display:flex;align-items:center;
+    justify-content:center;cursor:pointer;background:transparent}
+  .fs-prompt-badge{background:var(--ink);color:var(--raised);font-family:var(--mono);
+    font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:12px 22px;
+    border-radius:4px;opacity:.88;pointer-events:none}
 
   /* Help overlay */
   .help{position:fixed;inset:0;background:rgba(26,26,24,.45);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity 180ms var(--ease)}
@@ -788,6 +793,7 @@
 </main>
 
 <div class="present-hint" id="present-hint">Press <b>Esc</b> to exit · <b>Space</b> next · <b>&#8592;/&#8594;</b> navigate</div>
+<div class="fs-prompt" id="fs-prompt" style="display:none"><div class="fs-prompt-badge">Click to enter fullscreen</div></div>
 
 <div class="tpl-modal" id="tpl-modal">
   <div class="tpl-modal-card">
@@ -2393,6 +2399,7 @@ document.addEventListener('fullscreenchange', ()=>{
     focusOnActive({ distance:1 });
     updateActive();
     timerStop();
+    if (fsPrompt) fsPrompt.style.display = 'none';
   }
   if (document.fullscreenElement && state.present && timerCheck.checked){
     timerEl.style.display = 'flex';
@@ -2454,6 +2461,15 @@ function remoteSendSettings(){
   }));
 }
 
+const fsPrompt = document.getElementById('fs-prompt');
+fsPrompt.addEventListener('click', () => {
+  document.documentElement.requestFullscreen?.().catch(()=>{});
+  fsPrompt.style.display = 'none';
+});
+document.addEventListener('fullscreenchange', () => {
+  if (document.fullscreenElement) fsPrompt.style.display = 'none';
+});
+
 function handleRemoteCommand(d){
   if (d === 'next')          { advance(); }
   else if (d === 'prev')     { back(); }
@@ -2461,8 +2477,14 @@ function handleRemoteCommand(d){
   else if (d === 'toggleZoom')  { zoomCheck.checked   = !zoomCheck.checked;   zoomCheck.dispatchEvent(new Event('change')); }
   else if (d === 'toggleCards') { cardsCheck.checked  = !cardsCheck.checked;  cardsCheck.dispatchEvent(new Event('change')); }
   else if (d === 'toggleTimer') { timerCheck.checked  = !timerCheck.checked;  timerCheck.dispatchEvent(new Event('change')); }
-  else if (d === 'present')     { if (!state.present) togglePresent(); }
-  else if (d === 'stopPresent') { if (state.present)  togglePresent(); }
+  else if (d === 'present'){
+    if (!state.present){ togglePresent(); }
+    if (!document.fullscreenElement) fsPrompt.style.display = 'flex';
+  }
+  else if (d === 'stopPresent'){
+    if (state.present){ togglePresent(); }
+    fsPrompt.style.display = 'none';
+  }
 }
 
 function openRemoteModal(){
