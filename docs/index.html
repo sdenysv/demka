@@ -2484,16 +2484,31 @@ function openRemoteModal(){
     });
     remotePeer.on('connection', conn => {
       remoteConn = conn;
+      let staleTimer = null;
+      function resetStale(){
+        clearTimeout(staleTimer);
+        staleTimer = setTimeout(() => {
+          remoteConn = null;
+          $('#remote-dot').classList.remove('on');
+          remoteStatusKey = 'remoteDisconnected';
+          $('#remote-status-text').textContent = STRINGS[lang].remoteDisconnected;
+        }, 12000);
+      }
       $('#remote-dot').classList.add('on');
       remoteStatusKey = 'remoteConnected';
       $('#remote-status-text').textContent = STRINGS[lang].remoteConnected;
       conn.on('open', () => {
+        resetStale();
         remoteSendSlide();
         remoteSendTimer();
         remoteSendSettings();
       });
-      conn.on('data', d => handleRemoteCommand(d));
+      conn.on('data', d => {
+        resetStale();
+        if (d !== 'ping') handleRemoteCommand(d);
+      });
       conn.on('close', () => {
+        clearTimeout(staleTimer);
         remoteConn = null;
         $('#remote-dot').classList.remove('on');
         remoteStatusKey = 'remoteDisconnected';
@@ -2569,66 +2584,89 @@ window.addEventListener('beforeunload', () => { if (remotePeer) remotePeer.destr
   }
 
   loadPeerJS(() => {
-    const peer = new Peer();
-    peer.on('open', () => {
-      let poll = null;
-      let retryTimer = null;
+    let peer = null;
+    let poll = null, retryTimer = null, pingInterval = null;
 
-      function attemptConnect(){
-        if (currentConn){ try{ currentConn.close(); }catch(e){} }
-        clearInterval(poll);
+    function setStatus(text){ $('#phone-status-text').textContent = text; }
+
+    function markDisconnected(){
+      currentConn = null;
+      clearInterval(pingInterval);
+      clearTimeout(retryTimer);
+      clearInterval(poll);
+      $('#phone-dot').classList.remove('on');
+      phoneStatusKey = 'phoneDisconnected';
+      setStatus(STRINGS[lang].phoneDisconnected);
+      $('#phone-retry').classList.add('show');
+    }
+
+    function attemptConnect(){
+      if (currentConn){ try{ currentConn.close(); }catch(e){} currentConn = null; }
+      clearInterval(poll); clearTimeout(retryTimer); clearInterval(pingInterval);
+      $('#phone-retry').classList.remove('show');
+      $('#phone-dot').classList.remove('on');
+      phoneStatusKey = 'phoneConnecting';
+      setStatus(STRINGS[lang].phoneConnecting);
+
+      if (!peer || peer.destroyed){ createPeer(); return; }
+
+      const conn = peer.connect(hostId);
+      currentConn = conn;
+      let marked = false;
+
+      function markConnected(){
+        if (marked) return;
+        marked = true;
         clearTimeout(retryTimer);
+        clearInterval(poll);
         $('#phone-retry').classList.remove('show');
-        $('#phone-dot').classList.remove('on');
-        phoneStatusKey = 'phoneConnecting';
-        $('#phone-status-text').textContent = STRINGS[lang].phoneConnecting;
-
-        const conn = peer.connect(hostId);
-        currentConn = conn;
-        let marked = false;
-
-        function markConnected(){
-          if (marked) return;
-          marked = true;
-          clearTimeout(retryTimer);
-          clearInterval(poll);
-          $('#phone-retry').classList.remove('show');
-          $('#phone-dot').classList.add('on');
-          phoneStatusKey = 'phoneConnected';
-          $('#phone-status-text').textContent = STRINGS[lang].phoneConnected;
-        }
-
-        conn.on('open', markConnected);
-        conn.on('data', d => {
-          if (d === 'connected'){ markConnected(); return; }
-          let msg;
-          try { msg = JSON.parse(d); } catch(e) { return; }
-          if (msg.type === 'slide')    updateSlide(msg);
-          else if (msg.type === 'timer')    updateTimer(msg);
-          else if (msg.type === 'settings') updateSettings(msg);
-        });
-        poll = setInterval(() => { if (conn.open){ markConnected(); clearInterval(poll); } }, 200);
-        setTimeout(() => clearInterval(poll), 30000);
-
-        retryTimer = setTimeout(() => {
-          if (!marked) $('#phone-retry').classList.add('show');
-        }, 5000);
-
-        conn.on('close', () => {
-          marked = false;
-          currentConn = null;
-          clearTimeout(retryTimer);
-          clearInterval(poll);
-          $('#phone-dot').classList.remove('on');
-          phoneStatusKey = 'phoneDisconnected';
-          $('#phone-status-text').textContent = STRINGS[lang].phoneDisconnected;
-        });
+        $('#phone-dot').classList.add('on');
+        phoneStatusKey = 'phoneConnected';
+        setStatus(STRINGS[lang].phoneConnected);
+        pingInterval = setInterval(() => { if (conn.open) conn.send('ping'); else markDisconnected(); }, 5000);
       }
 
-      attemptConnect();
-      $('#phone-retry').addEventListener('click', attemptConnect);
-    });
-    peer.on('error', err => { $('#phone-status-text').textContent = 'Error: ' + err.type; });
+      conn.on('open', markConnected);
+      conn.on('data', d => {
+        if (d === 'connected'){ markConnected(); return; }
+        let msg;
+        try { msg = JSON.parse(d); } catch(e) { return; }
+        if (msg.type === 'slide')         updateSlide(msg);
+        else if (msg.type === 'timer')    updateTimer(msg);
+        else if (msg.type === 'settings') updateSettings(msg);
+      });
+      poll = setInterval(() => { if (conn.open){ markConnected(); clearInterval(poll); } }, 200);
+      setTimeout(() => clearInterval(poll), 30000);
+
+      retryTimer = setTimeout(() => { if (!marked) $('#phone-retry').classList.add('show'); }, 15000);
+
+      conn.on('close', () => { marked = false; markDisconnected(); });
+    }
+
+    function createPeer(){
+      if (peer && !peer.destroyed){ try{ peer.destroy(); }catch(e){} }
+      setStatus('Reconnecting…');
+      peer = new Peer();
+      peer.on('open', () => attemptConnect());
+      peer.on('disconnected', () => {
+        setStatus('Reconnecting…');
+        setTimeout(() => {
+          if (peer.destroyed) createPeer();
+          else try { peer.reconnect(); } catch(e){ createPeer(); }
+        }, 2000);
+      });
+      peer.on('error', err => {
+        if (err.type === 'network' || err.type === 'disconnected' || err.type === 'server-error'){
+          setTimeout(createPeer, 3000);
+        } else {
+          setStatus('Error: ' + err.type);
+          $('#phone-retry').classList.add('show');
+        }
+      });
+    }
+
+    createPeer();
+    $('#phone-retry').addEventListener('click', attemptConnect);
   });
 })();
 
