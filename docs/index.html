@@ -437,6 +437,29 @@
     touch-action:manipulation;transition:background 80ms,color 80ms}
   .phone-btn+.phone-btn{border-left:1px solid rgba(255,255,255,.08)}
   .phone-btn:active{background:rgba(255,255,255,.08);color:#fff}
+  /* Code entry screen */
+  .phone-code-screen{flex:1;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;padding:32px;gap:20px}
+  .phone-code-label{font:600 11px/1 var(--mono);letter-spacing:.12em;
+    text-transform:uppercase;color:rgba(255,255,255,.4)}
+  .phone-code-input{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);
+    border-radius:8px;color:#fff;font:700 34px/1 var(--mono);letter-spacing:.22em;
+    text-align:center;text-transform:uppercase;width:100%;max-width:260px;
+    padding:18px 8px;outline:none;-webkit-tap-highlight-color:transparent;
+    caret-color:#fff}
+  .phone-code-input::placeholder{color:rgba(255,255,255,.18);letter-spacing:.12em;font-size:28px}
+  .phone-code-input:focus{border-color:rgba(255,255,255,.45)}
+  .phone-code-btn{appearance:none;background:#fff;color:#000;border:none;
+    border-radius:6px;font:700 14px/1 var(--font);padding:14px 48px;
+    cursor:pointer;-webkit-tap-highlight-color:transparent;letter-spacing:.04em}
+  .phone-code-btn:active{opacity:.85}
+  .phone-code-err{font:600 12px/1 var(--mono);color:rgba(255,100,100,.8);
+    min-height:14px;text-align:center}
+  /* Short code in remote modal */
+  .remote-code{font:700 32px/1 var(--mono);letter-spacing:.18em;text-align:center;
+    color:var(--ink);padding:4px 0 2px}
+  .remote-code-hint{font:400 11px/1 var(--mono);color:var(--mute);text-align:center;
+    letter-spacing:.04em;margin-bottom:16px}
 
   /* ── No-cards mode ───────────────────────────────────────────── */
   body.no-cards .node{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
@@ -812,7 +835,8 @@
     <div class="remote-qr" id="remote-qr">
       <span id="remote-loading-text" style="color:var(--mute);font-size:12px;font-family:var(--mono)">loading…</span>
     </div>
-    <div class="remote-session-id" id="remote-session-id"></div>
+    <div class="remote-code" id="remote-code"></div>
+    <div class="remote-code-hint">or go to <b>demka.in.ua?clicker</b> and enter this code</div>
     <div class="remote-status-row">
       <span class="remote-dot" id="remote-dot"></span>
       <span id="remote-status-text">Waiting for phone…</span>
@@ -822,6 +846,15 @@
 </div>
 
 <div class="phone-ui" id="phone-ui">
+  <div class="phone-code-screen" id="phone-code-screen" style="display:none">
+    <div class="phone-code-label">Enter session code</div>
+    <input class="phone-code-input" id="phone-code-input" maxlength="6"
+      autocapitalize="characters" autocomplete="off" autocorrect="off"
+      spellcheck="false" inputmode="text" placeholder="ABCDEF">
+    <button class="phone-code-btn" id="phone-code-btn">Connect</button>
+    <div class="phone-code-err" id="phone-code-err"></div>
+  </div>
+  <div id="phone-clicker-ui" style="display:contents">
   <div class="phone-toolbar">
     <div class="phone-status-bar">
       <span class="phone-dot" id="phone-dot"></span>
@@ -851,6 +884,7 @@
     <button class="phone-btn" id="phone-prev">&#8592;</button>
     <button class="phone-btn" id="phone-next">&#8594;</button>
   </div>
+  </div><!-- phone-clicker-ui -->
 </div>
 
 <div class="help" id="help">
@@ -2422,7 +2456,12 @@ function loadPeerJS(cb){
   document.head.appendChild(s);
 }
 
-function remoteUID(){ return 'demka-' + Math.random().toString(36).slice(2,8); }
+function remoteUID(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/I/1/L
+  let id = '';
+  for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return id;
+}
 
 function remoteSendSlide(){
   if (!remoteConn?.open) return;
@@ -2502,7 +2541,7 @@ function openRemoteModal(){
     remotePeer.on('open', () => {
       const url = location.origin + location.pathname + '?remote=' + id;
       $('#remote-qr').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(url)}&size=160x160&margin=4" alt="QR">`;
-      $('#remote-session-id').textContent = id;
+      $('#remote-code').textContent = id;
     });
     remotePeer.on('connection', conn => {
       remoteConn = conn;
@@ -2551,13 +2590,50 @@ $('#remote-modal').addEventListener('click', e => { if (e.target===$('#remote-mo
 window.addEventListener('beforeunload', () => { if (remotePeer) remotePeer.destroy(); });
 
 (function checkPhoneMode(){
-  const hostId = new URLSearchParams(location.search).get('remote');
-  if (!hostId) return;
+  const params = new URLSearchParams(location.search);
+  const hostId = params.get('remote');
+  const clickerMode = params.has('clicker');
+  if (!hostId && !clickerMode) return;
+
   document.body.classList.add('phone-mode');
-  $('#phone-status-text').textContent = STRINGS[lang].phoneConnecting;
 
   let currentConn = null;
   function sendCmd(cmd){ if (currentConn?.open) currentConn.send(cmd); }
+
+  // ── Code entry screen (for ?clicker mode) ──────────────────
+  if (clickerMode && !hostId) {
+    $('#phone-code-screen').style.display = 'flex';
+    $('#phone-clicker-ui').style.display = 'none';
+
+    const input = $('#phone-code-input');
+    const btn   = $('#phone-code-btn');
+    const err   = $('#phone-code-err');
+
+    function submitCode(){
+      const code = input.value.toUpperCase().replace(/[^A-Z2-9]/g, '');
+      if (code.length < 6){ err.textContent = 'Enter 6 characters'; return; }
+      err.textContent = '';
+      // Transition to clicker UI and connect
+      $('#phone-code-screen').style.display = 'none';
+      $('#phone-clicker-ui').style.display = 'contents';
+      $('#phone-status-text').textContent = STRINGS[lang].phoneConnecting;
+      startClicker(code);
+    }
+    btn.addEventListener('click', submitCode);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') submitCode(); });
+    // Auto-format: uppercase only valid chars
+    input.addEventListener('input', () => {
+      const v = input.value.toUpperCase().replace(/[^ABCDEFGHJKLMNPQRSTUVWXYZ23456789]/g, '');
+      input.value = v;
+    });
+    return; // don't auto-connect yet
+  }
+
+  // ── Direct connect via ?remote=CODE ─────────────────────────
+  $('#phone-status-text').textContent = STRINGS[lang].phoneConnecting;
+  startClicker(hostId);
+
+  function startClicker(code){
 
   // Toggle buttons
   $('#pt-reveal').addEventListener('click', () => sendCmd('toggleReveal'));
@@ -2632,7 +2708,7 @@ window.addEventListener('beforeunload', () => { if (remotePeer) remotePeer.destr
 
       if (!peer || peer.destroyed){ createPeer(); return; }
 
-      const conn = peer.connect(hostId);
+      const conn = peer.connect(code);
       currentConn = conn;
       let marked = false;
 
@@ -2690,6 +2766,7 @@ window.addEventListener('beforeunload', () => { if (remotePeer) remotePeer.destr
     createPeer();
     $('#phone-retry').addEventListener('click', attemptConnect);
   });
+  } // end startClicker
 })();
 
 // ── iOS clicker phone mode ────────────────────────────────────
