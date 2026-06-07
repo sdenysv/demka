@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.19.3] - 2026-06-07
+
+### Fixed
+- Removed leftover "Запис" entry from Ukrainian help text
+
+---
+
 ## [2.19.2] - 2026-06-07
 
 ### Added
