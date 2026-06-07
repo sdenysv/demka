@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.19.1] - 2026-06-07
+
+### Changed
+- Renamed "Stone" theme to "Day" (EN) / "День" (UK)
+
+---
+
 ## [2.19.0] - 2026-06-07
 
 ### Removed
