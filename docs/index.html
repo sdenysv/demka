@@ -2496,6 +2496,8 @@ const ICE_CFG = { iceServers: [
   { urls: 'stun:stun1.l.google.com:19302' }
 ]};
 const FS_BASE = 'https://firestore.googleapis.com/v1/projects/demka-944f1/databases/(default)/documents';
+// Firebase Web API key — public by design (identifies the project, grants no admin access).
+// Security is enforced by Firestore rules. Restrict to demka.in.ua in GCP Console if needed.
 const FS_KEY  = 'AIzaSyBMQMTFQwWaqDcId-knFXw0Fh5VQCqQo3k';
 
 async function fsWrite(code, fields){
@@ -2818,7 +2820,7 @@ window.addEventListener('beforeunload', () => { clearInterval(_hostPollTimer); i
   const id = new URLSearchParams(location.search).get('iosremote');
   if (!id) return;
   const BASE = 'https://firestore.googleapis.com/v1/projects/demka-944f1/databases/(default)/documents';
-  const KEY  = 'AIzaSyBMQMTFQwWaqDcId-knFXw0Fh5VQCqQo3k';
+  const KEY  = 'AIzaSyBMQMTFQwWaqDcId-knFXw0Fh5VQCqQo3k'; // public Firebase Web API key — see FS_KEY above
 
   async function sendCmd(cmd){
     await fetch(`${BASE}/remotes/${id}?updateMask.fieldPaths=cmd&key=${KEY}`, {
@@ -3179,7 +3181,7 @@ timerCheck.addEventListener('change', () => {
 
 // ── Firebase share ────────────────────────────────────────────
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBMQMTFQwWaqDcId-knFXw0Fh5VQCqQo3k",
+  apiKey: "AIzaSyBMQMTFQwWaqDcId-knFXw0Fh5VQCqQo3k", // public Firebase Web API key — see FS_KEY above
   authDomain: "demka-944f1.firebaseapp.com",
   projectId: "demka-944f1",
   storageBucket: "demka-944f1.firebasestorage.app",
