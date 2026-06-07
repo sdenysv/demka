@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.19.2] - 2026-06-07
+
+### Added
+- Phone clicker page keeps the screen awake using the Wake Lock API (Chrome for Android, Safari 16.4+)
+
+---
+
 ## [2.19.1] - 2026-06-07
 
 ### Changed
