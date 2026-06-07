@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.19.9] - 2026-06-07
+
+### Fixed
+- Phone clicker: "code not found" error message now reads "open demka and scan new QR code"
+- Phone clicker: status text no longer truncates on small screens
+
+---
+
 ## [2.19.8] - 2026-06-07
 
 ### Changed
