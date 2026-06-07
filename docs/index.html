@@ -395,8 +395,8 @@
   .phone-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.25);
     flex-shrink:0;transition:background 200ms}
   .phone-dot.on{background:#5a9e6f}
-  .phone-status-text{font:600 11px/1 var(--mono);letter-spacing:.05em;text-transform:uppercase;
-    color:rgba(255,255,255,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .phone-status-text{font:600 11px/1.4 var(--mono);letter-spacing:.05em;text-transform:uppercase;
+    color:rgba(255,255,255,.35)}
   .phone-retry{display:none;appearance:none;border:1px solid rgba(255,255,255,.2);
     background:transparent;color:rgba(255,255,255,.4);font:600 11px/1 var(--font);
     letter-spacing:.05em;text-transform:uppercase;padding:5px 10px;border-radius:3px;
@@ -2748,7 +2748,7 @@ window.addEventListener('beforeunload', () => { clearInterval(_hostPollTimer); i
     if (_phonePC){ try { _phonePC.close(); } catch(e){} _phonePC = null; }
     try {
       const doc = await fsRead(code);
-      if (!doc?.offer){ setStatus('Code not found — check code or refresh presenter'); $('#phone-retry').classList.add('show'); return; }
+      if (!doc?.offer){ setStatus('Code not found — refresh presenter and retry'); $('#phone-retry').classList.add('show'); return; }
 
       setStatus('Negotiating…');
       const pc = new RTCPeerConnection(ICE_CFG);
