@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.19.8] - 2026-06-07
+
+### Changed
+- Phone clicker: connection status shown inline in the toolbar (left side)
+- Phone clicker: Present button always on the right; replaced by Retry button when disconnected
+
+---
+
 ## [2.19.7] - 2026-06-07
 
 ### Changed
