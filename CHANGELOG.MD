@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.19.5] - 2026-06-07
+
+### Changed
+- Topbar: "View" and "Color" split into two separate dropdowns; View button shows the active layout icon; Color button shows a single palette swatch
+- View dropdown moved after Color dropdown in topbar order
+- Font dropdown button label changed from "aA" to "Font / Шрифт"
+- Presentation view: timer moved to top-left, slide counter moved to top-right
+- Canvas view: minimap moved to bottom-right, slide counter moved to top-right, timer now visible in canvas view when enabled
+- Timer and counter boxes made smaller and visually consistent
+- Slide counter restructured into two rows: slide number and bullet-point progress
+- Bullet row label translates as "point" / "пункт"
+- All topbar tooltip (`title`) attributes now translate with the language switcher
+
+---
+
+## [2.19.4] - 2026-06-07
+
+### Added
+- Text size dropdown (Small / Medium / Large) next to the Timer toggle in the topbar — persisted in localStorage; scales all card text (headings and body) proportionally
+
+---
+
 ## [2.19.3] - 2026-06-07
 
 ### Fixed

@@ -206,26 +206,25 @@
 
 
   /* ── Canvas HUD ──────────────────────────────────────────── */
-  .canvas-hud{position:absolute;left:16px;top:16px;display:flex;flex-direction:column;gap:6px;
-    font-family:var(--mono);font-size:11px;color:var(--mute);letter-spacing:.04em;text-transform:uppercase;pointer-events:none;z-index:5}
-  .canvas-hud .crumb{display:flex;align-items:center;gap:6px;color:var(--ink2)}
-  .canvas-hud .crumb span+span::before{content:"›";margin-right:6px;color:var(--mute);text-transform:none}
+  .canvas-hud{display:none}
 
-  .counter{position:absolute;right:16px;bottom:16px;font:600 14px/1 var(--font);color:var(--ink);
-    background:var(--surface);border:1px solid var(--ink2);padding:9px 14px;border-radius:3px;
-    z-index:5;letter-spacing:.02em;font-variant-numeric:tabular-nums}
-  .counter .of{color:var(--ink2);margin:0 3px}
-  .counter .reveal{margin-left:8px;color:var(--mute);font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em}
+  .counter{position:absolute;right:16px;top:16px;background:var(--surface);
+    border:1px solid var(--ink2);padding:6px 10px;border-radius:3px;
+    z-index:5;display:flex;flex-direction:column;gap:0}
+  .counter .of{color:var(--ink2);margin:0 2px}
+  .c-row{display:flex;align-items:baseline;gap:6px}
+  .c-row+.c-row{margin-top:2px}
+  .c-label{font-size:9px;font-family:var(--mono);color:var(--mute);text-transform:uppercase;letter-spacing:.08em;line-height:1}
+  .c-val{font:600 12px/1 var(--font);color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:.02em}
 
-  .timer{position:absolute;right:16px;top:16px;font:600 14px/1.7 var(--font);color:var(--ink);
-    background:var(--surface);border:1px solid var(--ink2);padding:9px 14px;border-radius:3px;
-    z-index:5;letter-spacing:.02em;font-variant-numeric:tabular-nums;display:none;
-    flex-direction:column;gap:0}
-  .timer .t-row{display:flex;align-items:baseline;gap:7px}
+  .timer{position:absolute;left:16px;top:16px;background:var(--surface);
+    border:1px solid var(--ink2);padding:6px 10px;border-radius:3px;
+    z-index:5;display:none;flex-direction:column;gap:0}
+  .timer .t-row{display:flex;align-items:baseline;gap:6px}
   .timer .t-row+.t-row{margin-top:2px}
-  .timer .t-label{font-size:10px;font-family:var(--mono);color:var(--mute);text-transform:uppercase;letter-spacing:.08em;line-height:1}
-  .timer .t-val{font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums}
-  body.present .timer{background:transparent;border-color:transparent;color:var(--mute)}
+  .timer .t-label{font-size:9px;font-family:var(--mono);color:var(--mute);text-transform:uppercase;letter-spacing:.08em;line-height:1}
+  .timer .t-val{font:600 12px/1 var(--font);color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  body.present .timer{background:transparent;border-color:transparent}
   body.present .timer .t-val{color:var(--mute)}
 
   /* Navigation chevrons */
@@ -241,7 +240,7 @@
   .nav-chev svg{width:24px;height:24px}
 
   /* Minimap */
-  .minimap{position:absolute;right:16px;top:16px;width:110px;height:52px;
+  .minimap{position:absolute;right:16px;bottom:16px;width:110px;height:52px;
     background:var(--surface);border:1px solid var(--line);border-radius:4px;overflow:hidden;z-index:5;
     transition:opacity 180ms var(--ease)}
   .minimap .mm-canvas{position:absolute;inset:0}
@@ -272,14 +271,13 @@
   body.present .topbar,
   body.present .editor-pane,
   body.present .splitter,
-  body.present .canvas-hud,
   body.present .minimap{display:none}
   body.present .canvas-pane{background:var(--bg)}
   body.present .nav-chev{opacity:0!important}
   body.present:hover .nav-chev{opacity:.4!important}
   body.present .nav-chev:hover{opacity:1!important}
-  body.present .counter{background:transparent;border-color:transparent;color:var(--mute)}
-  body.present .counter .of{color:var(--mute)}
+  body.present .counter{background:transparent;border-color:transparent;transform:none}
+  body.present .counter .c-val,body.present .counter .of{color:var(--mute)}
 
   .present-hint{position:fixed;left:50%;top:24px;transform:translateX(-50%);
     background:var(--ink);color:var(--raised);font-family:var(--mono);font-size:11px;
@@ -489,22 +487,38 @@
 
   /* ── Export picker ──────────────────────────────────────────── */
   .export-picker{position:relative;display:flex;align-items:center}
-  /* ── View / layout picker ───────────────────────────────────── */
-  .view-picker{position:relative;display:flex;align-items:center}
-  .view-popup{position:absolute;top:calc(100% + 8px);right:0;
+  /* ── View / layout picker + Color picker ────────────────────── */
+  .view-picker,.color-picker{position:relative;display:flex;align-items:center}
+  .view-popup,.color-popup{position:absolute;top:calc(100% + 8px);right:0;
     background:var(--surface);border:1px solid var(--ink2);border-radius:6px;
     padding:6px;display:flex;flex-direction:column;gap:2px;min-width:220px;
     z-index:200;opacity:0;pointer-events:none;transform:translateY(-4px);
     transition:opacity 140ms var(--ease),transform 140ms var(--ease);box-shadow:0 4px 16px rgba(0,0,0,.12)}
-  .view-popup.show{opacity:1;pointer-events:auto;transform:none}
+  .view-popup.show,.color-popup.show{opacity:1;pointer-events:auto;transform:none}
   .view-opt{appearance:none;border:0;background:transparent;width:100%;
     font:500 13px/1 var(--font);color:var(--ink);padding:8px 10px;border-radius:4px;
     cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;
     transition:background 100ms var(--ease)}
   .view-opt:hover{background:var(--bg)}
   .view-opt.current{background:var(--bg);font-weight:600}
-  .view-opt .v-icon{width:18px;height:12px;flex-shrink:0;opacity:.7;display:inline-flex;align-items:center;justify-content:center}
+  .view-opt .v-icon,#view-btn-icon{width:18px;height:12px;flex-shrink:0;opacity:.7;display:inline-flex;align-items:center;justify-content:center}
   .view-opt .v-check{margin-left:auto;font-size:11px;opacity:.5}
+
+  /* ── Text size picker ───────────────────────────────────── */
+  .size-picker{position:relative;display:flex;align-items:center}
+  .size-popup{position:absolute;top:calc(100% + 8px);right:0;
+    background:var(--surface);border:1px solid var(--ink2);border-radius:6px;
+    padding:6px;display:flex;flex-direction:column;gap:2px;min-width:130px;
+    z-index:200;opacity:0;pointer-events:none;transform:translateY(-4px);
+    transition:opacity 140ms var(--ease),transform 140ms var(--ease);box-shadow:0 4px 16px rgba(0,0,0,.12)}
+  .size-popup.show{opacity:1;pointer-events:auto;transform:none}
+  .size-opt{appearance:none;border:0;background:transparent;width:100%;
+    font:500 13px/1 var(--font);color:var(--ink);padding:8px 10px;border-radius:4px;
+    cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;
+    transition:background 100ms var(--ease)}
+  .size-opt:hover{background:var(--bg)}
+  .size-opt.current{background:var(--bg);font-weight:600}
+  .size-opt .s-check{margin-left:auto;font-size:11px;opacity:.5}
 
   .export-popup{position:absolute;top:calc(100% + 8px);right:0;
     background:var(--surface);border:1px solid var(--ink2);border-radius:6px;
@@ -640,14 +654,14 @@
     .minimap{display:none}
 
     /* Counter: push to very bottom so it clears the card */
-    .counter{bottom:4px;right:50%;transform:translateX(50%);font-size:12px;padding:5px 10px}
+    .counter{top:8px;right:8px;font-size:12px;padding:5px 10px}
 
     /* Nav arrows: slimmer */
     .nav-chev{width:28px;height:44px}
     .nav-chev svg{width:20px;height:20px}
 
     /* Popups: anchor to left edge so they don't overflow */
-    .view-popup,#share-export-popup{right:auto;left:0}
+    .view-popup,.color-popup,#share-export-popup{right:auto;left:0}
   }
 </style>
 
@@ -685,22 +699,34 @@
     <span class="toggle-track"><span class="toggle-thumb"></span></span>
     <span class="toggle-label" id="timer-label">Timer</span>
   </label>
+  <div class="size-picker" id="size-picker">
+    <button class="btn" id="size-btn" title="Text size"><span id="size-btn-label">Font</span></button>
+    <div class="size-popup" id="size-popup">
+      <button class="size-opt" data-size="small"><span class="s-name" id="size-opt-small">Small</span></button>
+      <button class="size-opt current" data-size="medium"><span class="s-name" id="size-opt-medium">Medium</span></button>
+      <button class="size-opt" data-size="large"><span class="s-name" id="size-opt-large">Large</span></button>
+    </div>
+  </div>
+  <div class="color-picker" id="color-picker">
+    <button class="btn" id="color-btn" title="Color">
+      <span id="color-btn-label">Color</span>
+      <span class="pal-btn-dot" id="pdot-bg" style="margin-left:6px"></span>
+      <span class="arrow">▾</span>
+    </button>
+    <div class="color-popup" id="color-popup">
+      <div id="palette-popup"></div>
+    </div>
+  </div>
   <div class="view-picker" id="view-picker">
-    <button class="btn" id="view-btn" title="Layout &amp; color">
-      <span id="view-btn-label">Timeline</span>
-      <span class="pal-btn-dots" id="pal-btn-dots" style="margin-left:6px">
-        <span class="pal-btn-dot" id="pdot-bg"></span>
-        <span class="pal-btn-dot" id="pdot-surface"></span>
-        <span class="pal-btn-dot" id="pdot-ink"></span>
-      </span>
+    <button class="btn" id="view-btn" title="Layout">
+      <span id="view-btn-label">View</span>
+      <span id="view-btn-icon" style="margin-left:4px"></span>
       <span class="arrow">▾</span>
     </button>
     <div class="view-popup" id="view-popup">
       <button class="view-opt current" data-view="timeline"><span class="v-icon"><svg viewBox="0 0 20 14" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="5.5" width="4" height="3" rx="0.5"/><line x1="5" y1="7" x2="8" y2="7"/><rect x="8" y="5.5" width="4" height="3" rx="0.5"/><line x1="12" y1="7" x2="15" y2="7"/><rect x="15" y="5.5" width="4" height="3" rx="0.5"/></svg></span><span class="v-name">Timeline</span><span class="v-check">✓</span></button>
       <button class="view-opt" data-view="map"><span class="v-icon"><svg viewBox="0 0 20 14" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="5.5" width="4" height="3" rx="0.5"/><rect x="1" y="1" width="4" height="3" rx="0.5"/><rect x="1" y="10" width="4" height="3" rx="0.5"/><rect x="15" y="1" width="4" height="3" rx="0.5"/><rect x="15" y="10" width="4" height="3" rx="0.5"/><line x1="8" y1="6.5" x2="5" y2="2.5"/><line x1="8" y1="7.5" x2="5" y2="11.5"/><line x1="12" y1="6.5" x2="15" y2="2.5"/><line x1="12" y1="7.5" x2="15" y2="11.5"/></svg></span><span class="v-name">Map</span></button>
       <button class="view-opt" data-view="logic"><span class="v-icon"><svg viewBox="0 0 20 14" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="5.5" width="4" height="3" rx="0.5"/><rect x="13" y="2" width="4" height="3" rx="0.5"/><rect x="13" y="9" width="4" height="3" rx="0.5"/><line x1="5" y1="7" x2="9" y2="7"/><line x1="9" y1="3.5" x2="9" y2="10.5"/><line x1="9" y1="3.5" x2="13" y2="3.5"/><line x1="9" y1="10.5" x2="13" y2="10.5"/></svg></span><span class="v-name">Logic</span></button>
-      <div class="pal-sep" style="margin:6px 2px 4px"></div>
-      <div id="palette-popup"></div>
     </div>
   </div>
   <button class="btn" id="remote-btn" title="Phone remote">Clicker</button>
@@ -787,8 +813,14 @@
     </button>
 
     <div class="counter" id="counter" style="display:none">
-      <span id="counter-cur">1</span><span class="of">/</span><span id="counter-tot">1</span>
-      <span class="reveal" id="counter-reveal"></span>
+      <div class="c-row">
+        <span class="c-label" id="counter-slide-label">slide</span>
+        <span class="c-val"><span id="counter-cur">1</span><span class="of">/</span><span id="counter-tot">1</span></span>
+      </div>
+      <div class="c-row" id="counter-reveal-row" style="display:none">
+        <span class="c-label" id="counter-bullet-label">point</span>
+        <span class="c-val" id="counter-reveal"></span>
+      </div>
     </div>
 
     <div class="timer" id="timer">
@@ -1024,9 +1056,16 @@ const STRINGS = {
     revealLabel: 'Reveal',
     zoomLabel: 'Zoom',
     autoplayBtn: '&#9654;&#9654; Autoplay <span class="arrow">▾</span>',
+    viewBtn: 'View',
+    colorBtn: 'Color',
+    sizeBtn: 'Font',
+    sizeSmall: 'Small',
+    sizeMedium: 'Medium',
+    sizeLarge: 'Large',
 
     timerLabelTotal: 'demka',
     timerLabelSlide: 'slide',
+    counterLabelBullet: 'point',
     remoteBtn: 'Clicker',
     presentBtn: '&#9654; Present <kbd>F</kbd>',
     presentExit: 'Exit',
@@ -1103,17 +1142,44 @@ const STRINGS = {
     shareDoneClose: 'Close',
     shareErrorTitle: 'Failed to create link',
     shareErrorClose: 'Close',
+    titles: {
+      cardsToggle: 'Toggle card borders',
+      revealToggle: 'Reveal bullets one by one in presentation mode',
+      zoomToggle: 'Zoom in on bullet reveal',
+      timerToggle: 'Show/hide timer',
+      sizeBtn: 'Text size',
+      colorBtn: 'Color',
+      viewBtn: 'Layout',
+      remoteBtn: 'Phone remote',
+      autoBtn: 'Auto-advance slides',
+      helpBtn: 'Keyboard shortcuts',
+      tplBtn: 'Insert template',
+      edHide: 'Hide editor',
+      edShow: 'Show editor',
+      overviewBtn: 'Overview — fit all (0)',
+      ptReveal: 'Reveal',
+      ptZoom: 'Zoom',
+      ptCards: 'Cards',
+      ptTimer: 'Timer',
+    },
   },
   uk: {
-    logoSubtitle: '· markdown → слайди',
+    logoSubtitle: '· текст → слайди',
     cardsLabel: 'Картки',
     timerLabel: 'Таймер',
     revealLabel: 'Сходи',
     zoomLabel: 'Зум',
     autoplayBtn: '&#9654;&#9654; Автоплей <span class="arrow">▾</span>',
+    viewBtn: 'Вид',
+    colorBtn: 'Колір',
+    sizeBtn: 'Шрифт',
+    sizeSmall: 'Малий',
+    sizeMedium: 'Середній',
+    sizeLarge: 'Великий',
 
     timerLabelTotal: 'демка',
     timerLabelSlide: 'слайд',
+    counterLabelBullet: 'пункт',
     remoteBtn: 'Клікер',
     presentBtn: '&#9654; Презентувати <kbd>F</kbd>',
     presentExit: 'Вийти',
@@ -1189,6 +1255,26 @@ const STRINGS = {
     shareDoneClose: 'Закрити',
     shareErrorTitle: 'Помилка створення покликання',
     shareErrorClose: 'Закрити',
+    titles: {
+      cardsToggle: 'Показати/сховати рамки карток',
+      revealToggle: 'Відкривати пункти по одному в режимі презентації',
+      zoomToggle: 'Збільшення при відкритті пункту',
+      timerToggle: 'Показати/сховати таймер',
+      sizeBtn: 'Розмір тексту',
+      colorBtn: 'Колір',
+      viewBtn: 'Вид',
+      remoteBtn: 'Телефон-пульт',
+      autoBtn: 'Автоматична зміна слайдів',
+      helpBtn: 'Клавіатурні скорочення',
+      tplBtn: 'Вставити зразок',
+      edHide: 'Сховати редактор',
+      edShow: 'Показати редактор',
+      overviewBtn: 'Огляд — вписати все (0)',
+      ptReveal: 'Сходи',
+      ptZoom: 'Зум',
+      ptCards: 'Картки',
+      ptTimer: 'Таймер',
+    },
   },
 };
 let lang = localStorage.getItem('demka.lang') || 'en';
@@ -1203,11 +1289,15 @@ function applyLang(){
   document.getElementById('reveal-label').textContent = s.revealLabel;
   document.getElementById('zoom-label').textContent = s.zoomLabel;
   if (!_autoTimer) autoBtn.innerHTML = s.autoplayBtn;
+  document.getElementById('size-btn-label').textContent  = s.sizeBtn;
+  document.getElementById('size-opt-small').textContent  = s.sizeSmall;
+  document.getElementById('size-opt-medium').textContent = s.sizeMedium;
+  document.getElementById('size-opt-large').textContent  = s.sizeLarge;
 
   document.getElementById('timer-label-total').textContent = s.timerLabelTotal;
   document.getElementById('timer-label-slide').textContent = s.timerLabelSlide;
-  document.getElementById('timer-label-total').textContent = s.timerLabelTotal;
-  document.getElementById('timer-label-slide').textContent = s.timerLabelSlide;
+  document.getElementById('counter-slide-label').textContent  = s.timerLabelSlide;
+  document.getElementById('counter-bullet-label').textContent = s.counterLabelBullet;
 
   document.getElementById('remote-btn').textContent = s.remoteBtn;
   if (state.present){ presentBtn.textContent = s.presentExit; } else { presentBtn.innerHTML = s.presentBtn; }
@@ -1240,12 +1330,12 @@ function applyLang(){
   document.getElementById('help-features-title').textContent = s.helpFeatureTitle;
   document.getElementById('help-features').innerHTML = s.helpFeatures.map(f => `<li>${f}</li>`).join('');
   document.querySelector('.help-card dl').innerHTML = s.helpRows.map(([k,d]) => `<dt>${k}</dt><dd>${d}</dd>`).join('');
-  $('#view-btn-label').textContent = VIEW_LABELS()[state.viewMode];
+  $('#view-btn-label').textContent = s.viewBtn;
   $$('.view-opt[data-view]').forEach(btn => {
     const nameEl = btn.querySelector('.v-name');
     if (nameEl) nameEl.textContent = s.viewLabels[btn.dataset.view];
   });
-  buildPalettePopup();
+  document.getElementById('color-btn-label').textContent = s.colorBtn;
   document.getElementById('share-export-label').textContent = s.shareLink;
   document.getElementById('download-label').textContent = s.shareDownloadLabel;
   document.getElementById('share-info-title').textContent = s.shareInfoTitle;
@@ -1262,6 +1352,25 @@ function applyLang(){
   document.getElementById('share-done-close').textContent = s.shareDoneClose;
   document.getElementById('share-error-title').textContent = s.shareErrorTitle;
   document.getElementById('share-error-close').textContent = s.shareErrorClose;
+  const t = s.titles;
+  $('#cards-check').closest('label').title  = t.cardsToggle;
+  $('#reveal-check').closest('label').title = t.revealToggle;
+  $('#zoom-check').closest('label').title   = t.zoomToggle;
+  $('#timer-check').closest('label').title  = t.timerToggle;
+  $('#size-btn').title       = t.sizeBtn;
+  $('#color-btn').title      = t.colorBtn;
+  $('#view-btn').title       = t.viewBtn;
+  $('#remote-btn').title     = t.remoteBtn;
+  $('#auto-btn').title       = t.autoBtn;
+  $('#help-btn').title       = t.helpBtn;
+  $('#tpl-btn').title        = t.tplBtn;
+  $('#ed-hide-btn').title    = t.edHide;
+  $('#ed-show-tab').title    = t.edShow;
+  $('#overview-btn').title   = t.overviewBtn;
+  $('#pt-reveal').title      = t.ptReveal;
+  $('#pt-zoom').title        = t.ptZoom;
+  $('#pt-cards').title       = t.ptCards;
+  $('#pt-timer').title       = t.ptTimer;
 }
 
 // ── Front matter parser ──────────────────────────────────────
@@ -1409,6 +1518,8 @@ function flatten(root){
 
 // ── Card size — computed from canvas viewport ─────────────────
 let CARD_W, CARD_H, H_GAP, V_GAP, PAD;
+let _textScale = 1.0;
+const TEXT_SCALES = { small: 0.82, medium: 1.0, large: 1.24 };
 
 function computeCardSize(){
   const rect = canvas.getBoundingClientRect();
@@ -1422,10 +1533,10 @@ function computeCardSize(){
   // font sizes and node padding scale with card width (calibrated at CARD_W≈320)
   const cl = (v,mn,mx) => Math.max(mn, Math.min(mx, Math.round(v)));
   const r = document.documentElement;
-  r.style.setProperty('--nfs-h1',      cl(CARD_W * 0.1125, 12, 48) + 'px');
-  r.style.setProperty('--nfs-h2',      cl(CARD_W * 0.081,  10, 34) + 'px');
-  r.style.setProperty('--nfs-h3',      cl(CARD_W * 0.063,   9, 26) + 'px');
-  r.style.setProperty('--nfs-body',    cl(CARD_W * 0.050,   8, 20) + 'px');
+  r.style.setProperty('--nfs-h1',      Math.round(cl(CARD_W * 0.1125, 12, 48) * _textScale) + 'px');
+  r.style.setProperty('--nfs-h2',      Math.round(cl(CARD_W * 0.081,  10, 34) * _textScale) + 'px');
+  r.style.setProperty('--nfs-h3',      Math.round(cl(CARD_W * 0.063,   9, 26) * _textScale) + 'px');
+  r.style.setProperty('--nfs-body',    Math.round(cl(CARD_W * 0.050,   8, 20) * _textScale) + 'px');
   r.style.setProperty('--node-pad-v',  cl(CARD_H * 0.096,   8, 28) + 'px');
   r.style.setProperty('--node-pad-h',  cl(CARD_W * 0.081,   8, 32) + 'px');
 }
@@ -1851,7 +1962,13 @@ function updateActive(){
     counterCur.textContent = state.activeIdx + 1;
     counterTot.textContent = state.nodes.length;
     const tot = active ? totalRevealSteps(active) : 0;
-    counterReveal.textContent = tot > 0 ? `· ${Math.min(state.bulletsShown, tot)}/${tot}` : '';
+    const revealRow = document.getElementById('counter-reveal-row');
+    if (tot > 0){
+      counterReveal.textContent = `${Math.min(state.bulletsShown, tot)}/${tot}`;
+      if (revealRow) revealRow.style.display = '';
+    } else {
+      if (revealRow) revealRow.style.display = 'none';
+    }
   } else { counter.style.display = 'none'; }
 }
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -2072,7 +2189,7 @@ function updateNavButtons(){
 }
 
 // ── Persistence ──────────────────────────────────────────────
-const APP_VERSION = '2.19.3';
+const APP_VERSION = '2.19.5';
 const STORAGE_KEY = 'demka.md';
 const IMG_KEY_PREFIX = 'demka.img.';
 
@@ -2145,14 +2262,14 @@ function timerStart(){
   _timerTotal = 0; _timerSlide = 0;
   timerTotalEl.textContent = '00:00:00';
   timerSlideEl.textContent = '00:00:00';
-  if (timerCheck.checked && document.fullscreenElement) timerEl.style.display = 'flex';
+  if (timerCheck.checked) timerEl.style.display = 'flex';
   clearInterval(_timerInterval);
   _timerInterval = setInterval(timerTick, 1000);
 }
 function timerStop(){
   clearInterval(_timerInterval);
   _timerInterval = null;
-  timerEl.style.display = 'none';
+  if (!timerCheck.checked) timerEl.style.display = 'none';
 }
 function timerResetSlide(){
   _timerSlide = 0;
@@ -2390,7 +2507,7 @@ document.addEventListener('fullscreenchange', ()=>{
   if (document.fullscreenElement && state.present && timerCheck.checked){
     timerEl.style.display = 'flex';
   }
-  if (!document.fullscreenElement){
+  if (!document.fullscreenElement && !timerCheck.checked){
     timerEl.style.display = 'none';
   }
 });
@@ -2890,8 +3007,6 @@ function applyCustomFull(){
   const root = document.documentElement.style;
   for (const k of PAL_VARS) if (full[k]) root.setProperty('--'+k, full[k]);
   document.getElementById('pdot-bg').style.background = full.bg;
-  document.getElementById('pdot-surface').style.background = full.surface;
-  document.getElementById('pdot-ink').style.background = full.ink;
   localStorage.setItem('demka.colors', JSON.stringify({name:'Custom'}));
   saveCustomColors();
   const { meta } = parseFrontMatter(editor.value);
@@ -2941,8 +3056,6 @@ function applyPalette(p){
   const root = document.documentElement.style;
   for (const k of PAL_VARS) if (p[k]) root.setProperty('--'+k, p[k]);
   document.getElementById('pdot-bg').style.background = p.bg;
-  document.getElementById('pdot-surface').style.background = p.surface;
-  document.getElementById('pdot-ink').style.background = p.ink;
   localStorage.setItem('demka.colors', JSON.stringify(p));
   // Re-apply any frontmatter overrides on top of the new palette
   const { meta } = parseFrontMatter(editor.value);
@@ -2996,7 +3109,7 @@ function buildPalettePopup(){
   popup.querySelectorAll('.pal-preset[data-name]').forEach(btn => {
     btn.addEventListener('click', () => {
       const p = PALETTES.find(x => x.name === btn.dataset.name);
-      if (p){ applyPalette(p); closeViewPopup(); }
+      if (p){ applyPalette(p); closeColorPopup(); }
     });
   });
 
@@ -3085,11 +3198,11 @@ zoomCheck.addEventListener('change', () => {
 const timerCheck = $('#timer-check');
 (function initTimerToggle(){
   const on = localStorage.getItem('demka.timer') === 'on';
-  if (on) timerCheck.checked = true;
+  if (on){ timerCheck.checked = true; timerEl.style.display = 'flex'; }
 })();
 timerCheck.addEventListener('change', () => {
   localStorage.setItem('demka.timer', timerCheck.checked ? 'on' : 'off');
-  if (!timerCheck.checked && timerEl) timerEl.style.display = 'none';
+  if (timerEl) timerEl.style.display = timerCheck.checked ? 'flex' : 'none';
   remoteSendSettings();
 });
 
@@ -3267,6 +3380,7 @@ if (localStorage.getItem('demka.editorHidden')) document.body.classList.add('edi
 const VIEW_LABELS = () => STRINGS[lang].viewLabels;
 
 function openViewPopup(){
+  closeColorPopup();
   const popup = $('#view-popup');
   popup.querySelectorAll('.view-opt').forEach(btn => {
     const active = btn.dataset.view === state.viewMode;
@@ -3275,7 +3389,6 @@ function openViewPopup(){
     if (active && !check){ check = document.createElement('span'); check.className='v-check'; check.textContent='✓'; btn.appendChild(check); }
     else if (!active && check) check.remove();
   });
-  buildPalettePopup();
   popup.classList.add('show');
 }
 function closeViewPopup(){ $('#view-popup').classList.remove('show'); }
@@ -3287,15 +3400,31 @@ $('#view-btn').addEventListener('click', e => {
 document.addEventListener('click', closeViewPopup);
 $('#view-popup').addEventListener('click', e => e.stopPropagation());
 
+function openColorPopup(){ closeViewPopup(); buildPalettePopup(); $('#color-popup').classList.add('show'); }
+function closeColorPopup(){ $('#color-popup').classList.remove('show'); }
+
+$('#color-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  $('#color-popup').classList.contains('show') ? closeColorPopup() : openColorPopup();
+});
+document.addEventListener('click', closeColorPopup);
+$('#color-popup').addEventListener('click', e => e.stopPropagation());
+
 function applyViewClass(){
   document.body.classList.remove('view-timeline','view-map','view-logic');
   document.body.classList.add('view-' + state.viewMode);
 }
 
+function updateViewBtnIcon(){
+  const src = document.querySelector(`.view-opt[data-view="${state.viewMode}"] .v-icon`);
+  const icon = document.getElementById('view-btn-icon');
+  if (src && icon) icon.innerHTML = src.innerHTML;
+}
+
 $('#view-popup').querySelectorAll('.view-opt').forEach(btn => {
   btn.addEventListener('click', () => {
     state.viewMode = btn.dataset.view;
-    $('#view-btn-label').textContent = VIEW_LABELS()[state.viewMode];
+    updateViewBtnIcon();
     localStorage.setItem('demka.viewMode', state.viewMode);
     applyViewClass();
     closeViewPopup();
@@ -3306,11 +3435,46 @@ $('#view-popup').querySelectorAll('.view-opt').forEach(btn => {
 
 (function initViewMode(){
   const saved = localStorage.getItem('demka.viewMode');
-  if (saved && VIEW_LABELS()[saved]){
-    state.viewMode = saved;
-    $('#view-btn-label').textContent = VIEW_LABELS()[saved];
-  }
+  if (saved && VIEW_LABELS()[saved]) state.viewMode = saved;
   applyViewClass();
+  updateViewBtnIcon();
+})();
+
+// ── Text size picker ──────────────────────────────────────────
+function openSizePopup(){
+  const curSize = localStorage.getItem('demka.textSize') || 'medium';
+  $('#size-popup').querySelectorAll('.size-opt').forEach(btn => {
+    const active = btn.dataset.size === curSize;
+    btn.classList.toggle('current', active);
+    let check = btn.querySelector('.s-check');
+    if (active && !check){ check = document.createElement('span'); check.className='s-check'; check.textContent='✓'; btn.appendChild(check); }
+    else if (!active && check) check.remove();
+  });
+  $('#size-popup').classList.add('show');
+}
+function closeSizePopup(){ $('#size-popup').classList.remove('show'); }
+
+$('#size-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  $('#size-popup').classList.contains('show') ? closeSizePopup() : openSizePopup();
+});
+document.addEventListener('click', closeSizePopup);
+$('#size-popup').addEventListener('click', e => e.stopPropagation());
+
+$('#size-popup').querySelectorAll('.size-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    _textScale = TEXT_SCALES[btn.dataset.size] || 1.0;
+    localStorage.setItem('demka.textSize', btn.dataset.size);
+    closeSizePopup();
+    computeCardSize();
+    doRebuild();
+    zoomFitAll();
+  });
+});
+
+(function initTextSize(){
+  const saved = localStorage.getItem('demka.textSize') || 'medium';
+  _textScale = TEXT_SCALES[saved] || 1.0;
 })();
 
 // ── Language switcher ─────────────────────────────────────────
