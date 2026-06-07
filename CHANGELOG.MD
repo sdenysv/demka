@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.19.0] - 2026-06-07
+
+### Removed
+- Screen recording feature
+
+---
+
 ## [2.18.0] - 2026-06-05
 
 ### Changed
